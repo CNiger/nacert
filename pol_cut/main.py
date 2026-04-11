@@ -487,7 +487,7 @@ def health():
     return {"status": "ok", "version": "8.0.2"}
 
 
-app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+
 
 
 if __name__ == "__main__":
