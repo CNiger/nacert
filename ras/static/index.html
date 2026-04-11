@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Индустриальный эпюр · Ортогональный режим</title>
+    <style>
+        /* ----- ИНДУСТРИАЛЬНЫЙ ФУТУРИЗМ ----- */
+        :root {
+            --metal-base: #171a1f;
+            --metal-panel: #1f232a;
+            --metal-canvas: #1e2129;
+            --metal-border: #3a3e48;
+            --text-primary: #eef2f8;
+            --text-secondary: #9ca3b5;
+            --orange-pulse: #ff5500;
+            --orange-active: #e6451a;
+            --orange-glow: #b53a0a;
+            --orange-preview: #ff8c42;
+            --cyan-system: #00a6c4;
+            --success: #4caf50;
+            --error: #ff5e5e;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--metal-base);
+            background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 12px);
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .dashboard {
+            display: flex;
+            gap: 24px;
+            flex: 1;
+            min-height: 0;
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .panel {
+            background: var(--metal-panel);
+            border: 1px solid var(--metal-border);
+            border-radius: 2px;
+            box-shadow: inset 0 0 0 1px rgba(255,85,0,0.1), 0 8px 20px rgba(0,0,0,0.4);
+            backdrop-filter: blur(0.5px);
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        .panel::-webkit-scrollbar {
+            width: 4px;
+            background: var(--metal-border);
+        }
+        .panel::-webkit-scrollbar-thumb {
+            background: var(--orange-pulse);
+        }
+
+        .draw-panel {
+            flex: 2;
+            min-width: 280px;
+        }
+
+        .control-panel {
+            flex: 1;
+            min-width: 280px;
+        }
+
+        .panel-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--orange-pulse);
+            margin-bottom: 20px;
+            border-left: 3px solid var(--orange-pulse);
+            padding-left: 12px;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+
+        .shape-selector {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            flex-shrink: 0;
+        }
+        .shape-btn {
+            flex: 1;
+            background: #0f1117;
+            border: 1px solid var(--metal-border);
+            border-radius: 2px;
+            padding: 12px 6px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.08s linear;
+            text-align: center;
+        }
+        .shape-btn:hover {
+            border-color: var(--orange-active);
+            transform: translateY(1px);
+            box-shadow: 0 2px 6px rgba(255,85,0,0.3);
+        }
+        .shape-btn.active {
+            border-bottom: 2px solid var(--orange-pulse);
+            color: var(--orange-pulse);
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            margin-bottom: 20px;
+            flex-shrink: 0;
+        }
+        #drawingCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: var(--metal-canvas);
+            background-image: radial-gradient(circle at 30% 40%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.2) 100%);
+            border: 1px solid var(--metal-border);
+            cursor: crosshair;
+            transition: all 0.1s;
+        }
+        .drawing-active {
+            animation: glowDischarge 1s infinite;
+        }
+        @keyframes glowDischarge {
+            0% { border-color: var(--orange-pulse); box-shadow: 0 0 4px var(--orange-pulse); }
+            50% { border-color: var(--orange-glow); box-shadow: 0 0 12px var(--orange-pulse); }
+            100% { border-color: var(--orange-pulse); box-shadow: 0 0 4px var(--orange-pulse); }
+        }
+
+        .control-buttons {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+            flex-shrink: 0;
+        }
+        .btn {
+            background: #0f1117;
+            border: 1px solid var(--metal-border);
+            border-radius: 2px;
+            padding: 10px 8px;
+            font-family: monospace;
+            font-weight: 600;
+            font-size: 0.7rem;
+            letter-spacing: 0.5px;
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.08s linear;
+            text-transform: uppercase;
+        }
+        .btn-primary {
+            border-left: 2px solid var(--orange-pulse);
+        }
+        .btn-primary:hover {
+            border-color: var(--orange-active);
+            transform: translateY(1px);
+            box-shadow: 0 2px 6px rgba(255,85,0,0.3);
+        }
+        .btn-danger {
+            border-left: 2px solid var(--error);
+        }
+        .btn-danger:hover {
+            border-color: var(--error);
+        }
+        .btn:active {
+            transform: translateY(2px);
+        }
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ортогональный переключатель */
+        .ortho-toggle {
+            width: 100%;
+            margin-bottom: 20px;
+            background: #0f1117;
+            border: 1px solid var(--metal-border);
+            padding: 12px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+        .ortho-toggle.active {
+            border-left: 3px solid var(--orange-pulse);
+            border-right: 1px solid var(--orange-pulse);
+            background: #1a1e28;
+            color: var(--orange-pulse);
+            box-shadow: 0 0 6px rgba(255,85,0,0.3);
+        }
+        .ortho-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 1px;
+            background: var(--metal-border);
+            margin-right: 12px;
+        }
+        .ortho-toggle.active .ortho-indicator {
+            background: var(--orange-pulse);
+            box-shadow: 0 0 4px var(--orange-pulse);
+        }
+
+        .telemetry-panel {
+            background: #0f1117;
+            border-top: 1px solid var(--orange-pulse);
+            padding: 6px 16px;
+            font-size: 0.7rem;
+            font-family: monospace;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-shrink: 0;
+            margin-top: 16px;
+        }
+        .telemetry-prefix {
+            font-weight: 700;
+            color: var(--cyan-system);
+        }
+        .telemetry-message {
+            color: var(--text-secondary);
+        }
+
+        .points-panel {
+            background: #0a0c10;
+            border: 1px solid var(--metal-border);
+            border-radius: 2px;
+            padding: 12px;
+            max-height: 180px;
+            overflow-y: auto;
+            margin-top: 16px;
+            font-size: 0.7rem;
+            flex-shrink: 1;
+        }
+        .point-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(58,62,72,0.4);
+            font-family: monospace;
+        }
+        .point-coord {
+            color: var(--orange-preview);
+        }
+
+        .format-selector {
+            display: flex;
+            gap: 12px;
+            margin: 20px 0 12px;
+            flex-shrink: 0;
+        }
+        .format-btn {
+            flex: 1;
+            background: #0f1117;
+            border: 1px solid var(--metal-border);
+            border-radius: 2px;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.08s;
+        }
+        .format-btn.active {
+            border-bottom: 2px solid var(--orange-pulse);
+            color: var(--orange-pulse);
+        }
+        .format-btn:not(.active) {
+            opacity: 0.6;
+            filter: grayscale(0.2);
+        }
+        .format-btn:not(.active):hover {
+            opacity: 0.8;
+            border-color: var(--orange-active);
+        }
+
+        .download-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .download-btn {
+            flex: 1;
+            background: #0f1117;
+            border: 1px solid var(--metal-border);
+            border-radius: 2px;
+            padding: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.08s linear;
+            text-transform: uppercase;
+        }
+        .download-btn:disabled {
+            opacity: 0.4;
+            filter: grayscale(0.3);
+            cursor: not-allowed;
+        }
+        .download-btn:not(:disabled):hover {
+            border-color: var(--orange-active);
+            color: var(--orange-pulse);
+        }
+
+        @keyframes powerFlash {
+            0% { box-shadow: 0 0 0 0 var(--orange-pulse); border-color: var(--orange-pulse); }
+            70% { box-shadow: 0 0 0 12px rgba(255,85,0,0); border-color: var(--orange-pulse); }
+            100% { box-shadow: 0 0 0 0 rgba(255,85,0,0); border-color: var(--metal-border); }
+        }
+        .power-flash {
+            animation: powerFlash 0.2s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+
+        .loading {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(23,26,31,0.9);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .loader-content {
+            background: var(--metal-panel);
+            border: 1px solid var(--orange-pulse);
+            padding: 32px;
+            text-align: center;
+            border-radius: 2px;
+            box-shadow: 0 0 20px rgba(255,85,0,0.3);
+        }
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--metal-border);
+            border-top-color: var(--orange-pulse);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin: 0 auto 16px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 800px) {
+            body {
+                overflow-y: auto;
+                height: auto;
+                padding: 12px;
+            }
+            .dashboard {
+                flex-direction: column;
+                gap: 16px;
+                height: auto;
+            }
+            .panel {
+                overflow-y: visible;
+                max-height: none;
+            }
+            .points-panel {
+                max-height: 160px;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <div class="panel draw-panel">
+        <div class="panel-title">▶ КОНТУР РЕЗА</div>
+        <div class="shape-selector">
+            <button class="shape-btn sphere" data-shape="sphere">СФЕРА</button>
+            <button class="shape-btn cone active" data-shape="cone">КОНУС</button>
+            <button class="shape-btn cylinder" data-shape="cylinder">ЦИЛИНДР</button>
+        </div>
+        <div class="canvas-container">
+            <canvas id="drawingCanvas"></canvas>
+        </div>
+        <div class="control-buttons">
+            <button id="startDrawBtn" class="btn btn-primary">▶ НАЧАТЬ</button>
+            <button id="undoBtn" class="btn">↩ ОТМЕНИТЬ</button>
+            <button id="closeBtn" class="btn">🔒 ЗАМКНУТЬ</button>
+            <button id="clearBtn" class="btn btn-danger">🗑 ОЧИСТИТЬ</button>
+        </div>
+    </div>
+
+    <div class="panel control-panel">
+        <div class="panel-title">⚙ УПРАВЛЕНИЕ</div>
+        <div class="status-panel" style="background:#0f1117; padding:12px; margin-bottom:12px; border-left:3px solid var(--orange-pulse);">
+            <div id="statusMessage" class="telemetry-status">[SYS] ГОТОВ</div>
+        </div>
+
+        <!-- ORTHO TOGGLE BUTTON -->
+        <div id="orthoToggleBtn" class="ortho-toggle">
+            <span><span class="ortho-indicator"></span> ORTHO MODE (горизонт/вертикаль)</span>
+            <span style="font-size:0.8rem;">⊞</span>
+        </div>
+
+        <button id="generateBtn" class="btn btn-primary" style="width:100%; margin-bottom:20px;">⚡ СОЗДАТЬ 3D МОДЕЛЬ</button>
+
+        <div class="format-selector">
+            <button id="formatStep" class="format-btn step active">STEP</button>
+            <button id="formatStl" class="format-btn stl">STL</button>
+        </div>
+        <div class="download-group">
+            <button id="downloadStepBtn" class="download-btn step" disabled>📥 STEP</button>
+            <button id="downloadStlBtn" class="download-btn stl" disabled>📥 STL</button>
+        </div>
+        <div class="download-group" style="margin-top:8px;">
+            <button id="downloadPNGBtn" class="download-btn png" disabled>📱 PNG (3 вида)</button>
+        </div>
+
+        <div style="margin-top: 24px;">
+            <div class="panel-title" style="margin-bottom: 8px;">📋 ТОЧКИ КОНТУРА</div>
+            <div id="pointsList" class="points-panel">
+                <div style="color: var(--text-secondary); text-align:center;">[нет данных]</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="telemetry-panel" id="telemetry">
+    <div><span class="telemetry-prefix">[SYS]</span> <span id="telemetryMsg" class="telemetry-message">АКТИВНА СИСТЕМА ПРОФИЛИРОВАНИЯ</span></div>
+</div>
+
+<div id="loadingOverlay" class="loading">
+    <div class="loader-content">
+        <div class="spinner"></div>
+        <div style="color:var(--orange-pulse);">ГЕНЕРАЦИЯ МОДЕЛИ</div>
+        <div style="font-size:0.7rem; margin-top:8px;">Обработка геометрии...</div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('drawingCanvas');
+    const ctx = canvas.getContext('2d');
+    let points = [];
+    let currentPoints = [];
+    let isDrawing = false;
+    let currentShape = 'cone';
+    let modelData = null;
+
+    let sphereParams = null;
+    let coneParams = null;
+    let cylinderParams = null;
+
+    let orthoEnabled = false;
+
+    const shapeBtns = document.querySelectorAll('.shape-btn');
+    const startDrawBtn = document.getElementById('startDrawBtn');
+    const undoBtn = document.getElementById('undoBtn');
+    const closeBtn = document.getElementById('closeBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const generateBtn = document.getElementById('generateBtn');
+    const formatStep = document.getElementById('formatStep');
+    const formatStl = document.getElementById('formatStl');
+    const downloadStepBtn = document.getElementById('downloadStepBtn');
+    const downloadStlBtn = document.getElementById('downloadStlBtn');
+    const downloadPNGBtn = document.getElementById('downloadPNGBtn');
+    const statusMsgSpan = document.getElementById('statusMessage');
+    const telemetryMsgSpan = document.getElementById('telemetryMsg');
+    const pointsListDiv = document.getElementById('pointsList');
+    const orthoToggle = document.getElementById('orthoToggleBtn');
+
+    let selectedFormat = 'step';
+
+    function updateStatus(message, isError = false, isOk = false) {
+        statusMsgSpan.innerHTML = isError ? `[ERR] ${message}` : (isOk ? `[OK] ${message}` : `[SYS] ${message}`);
+        telemetryMsgSpan.innerText = message;
+        if (isError) {
+            statusMsgSpan.style.color = 'var(--error)';
+            telemetryMsgSpan.style.color = 'var(--error)';
+            setTimeout(() => { statusMsgSpan.style.color = ''; telemetryMsgSpan.style.color = ''; }, 1500);
+        } else if (isOk) {
+            statusMsgSpan.style.color = 'var(--success)';
+            telemetryMsgSpan.style.color = 'var(--success)';
+            setTimeout(() => { statusMsgSpan.style.color = ''; telemetryMsgSpan.style.color = ''; }, 1000);
+        } else {
+            statusMsgSpan.style.color = '';
+            telemetryMsgSpan.style.color = '';
+        }
+    }
+
+    function updatePointsUI() {
+        if (currentPoints.length === 0) {
+            pointsListDiv.innerHTML = '<div style="color: var(--text-secondary); text-align:center;">[нет данных]</div>';
+            return;
+        }
+        let html = '';
+        currentPoints.forEach((p, idx) => {
+            const coord = currentShape === 'sphere' ? `X:${p[0].toFixed(3)} Y:${p[1].toFixed(3)}` : `X:${p[0].toFixed(3)} Z:${p[1].toFixed(3)}`;
+            html += `<div class="point-item"><span>#${idx+1}</span><span class="point-coord">${coord}</span></div>`;
+        });
+        pointsListDiv.innerHTML = html;
+    }
+
+    function getShapeBounds() {
+        if (currentShape === 'sphere' && sphereParams) {
+            return { left: sphereParams.leftX, right: sphereParams.rightX, top: sphereParams.topY, bottom: sphereParams.bottomY };
+        } else if (currentShape === 'cone' && coneParams) {
+            return { left: coneParams.leftX, right: coneParams.rightX, top: coneParams.topY, bottom: coneParams.bottomY };
+        } else if (currentShape === 'cylinder' && cylinderParams) {
+            return { left: cylinderParams.leftX, right: cylinderParams.rightX, top: cylinderParams.topY, bottom: cylinderParams.bottomY };
+        }
+        return null;
+    }
+
+    function drawGridAndShape() {
+        const w = canvas.width, h = canvas.height;
+        const centerX = w/2, centerY = h/2;
+        ctx.clearRect(0,0,w,h);
+        ctx.fillStyle = '#1e2129';
+        ctx.fillRect(0,0,w,h);
+        ctx.save();
+        ctx.strokeStyle = '#2a2c34';
+        ctx.lineWidth = 0.5;
+        const step = Math.max(20, Math.min(w, h) / 15);
+        for (let x = 0; x <= w; x += step) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke(); }
+        for (let y = 0; y <= h; y += step) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke(); }
+        ctx.restore();
+
+        if (currentShape === 'sphere') {
+            const r = Math.min(w,h) * 0.35;
+            ctx.strokeStyle = '#ff5500';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(centerX, centerY, r, 0, Math.PI*2); ctx.stroke();
+            sphereParams = { centerX, centerY, radius: r, leftX: centerX-r, rightX: centerX+r, topY: centerY-r, bottomY: centerY+r, width: r*2, height: r*2 };
+        } else if (currentShape === 'cone') {
+            const aspect = 30/70;
+            const baseSize = Math.min(w, h) * 0.9;
+            const th = baseSize * 0.75;
+            const tw = th * aspect * 1.4;
+            const lx = centerX - tw/2, rx = centerX + tw/2;
+            const ty = centerY - th/2 + (baseSize * 0.02);
+            const by = centerY + th/2 + (baseSize * 0.02);
+            ctx.strokeStyle = '#ff5500';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.moveTo(lx, by); ctx.lineTo(centerX, ty); ctx.lineTo(rx, by); ctx.closePath(); ctx.stroke();
+            coneParams = { leftX:lx, rightX:rx, topY:ty, bottomY:by, width:tw, height:th, centerX, centerY };
+        } else {
+            const sz = Math.min(w,h)*0.6;
+            const lx = centerX - sz/2, ty = centerY - sz/2;
+            ctx.strokeStyle = '#ff5500';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(lx, ty, sz, sz);
+            cylinderParams = { leftX:lx, rightX:lx+sz, topY:ty, bottomY:ty+sz, width:sz, height:sz, centerX, centerY };
+        }
+
+        if (points.length) {
+            ctx.beginPath();
+            ctx.strokeStyle = '#ff8c42';
+            ctx.lineWidth = 2;
+            ctx.moveTo(points[0].x, points[0].y);
+            for(let i=1;i<points.length;i++) ctx.lineTo(points[i].x, points[i].y);
+            if(points.length>=3 && !isDrawing) ctx.lineTo(points[0].x, points[0].y);
+            ctx.stroke();
+            points.forEach((p,i)=>{
+                ctx.fillStyle = '#ff5500';
+                ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI*2); ctx.fill();
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 12px monospace';
+                ctx.fillText(i+1, p.x-3, p.y-3);
+            });
+        }
+    }
+
+    function resizeCanvas() {
+        const container = canvas.parentElement;
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+        drawGridAndShape();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    canvas.addEventListener('mousedown', (e) => {
+        if (!isDrawing) return;
+        const rect = canvas.getBoundingClientRect();
+        let mouseX = (e.clientX - rect.left) * (canvas.width/rect.width);
+        let mouseY = (e.clientY - rect.top) * (canvas.height/rect.height);
+        
+        let finalX = mouseX, finalY = mouseY;
+        
+        if (orthoEnabled && points.length > 0) {
+            const prev = points[points.length-1];
+            const dx = mouseX - prev.x;
+            const dy = mouseY - prev.y;
+            // строго горизонталь или вертикаль
+            if (Math.abs(dx) >= Math.abs(dy)) {
+                finalX = mouseX;
+                finalY = prev.y;
+            } else {
+                finalX = prev.x;
+                finalY = mouseY;
+            }
+            // привязка к границам фигуры, чтобы линия не выходила за пределы
+            const bounds = getShapeBounds();
+            if (bounds) {
+                finalX = Math.min(bounds.right, Math.max(bounds.left, finalX));
+                finalY = Math.min(bounds.bottom, Math.max(bounds.top, finalY));
+            }
+            // защита от дубликата
+            if (Math.abs(finalX - prev.x) < 0.5 && Math.abs(finalY - prev.y) < 0.5) {
+                updateStatus('Точка совпадает с предыдущей, пропущено', false);
+                return;
+            }
+        }
+        
+        // вычисление нормализованных координат (для генерации модели) без изменения экранных координат
+        let normX, normY;
+        if (currentShape === 'sphere' && sphereParams) {
+            normX = (finalX - sphereParams.leftX) / sphereParams.width;
+            normY = (finalY - sphereParams.topY) / sphereParams.height;
+            normX = Math.min(1, Math.max(0, normX));
+            normY = Math.min(1, Math.max(0, normY));
+            const invY = 1 - normY;
+            points.push({x: finalX, y: finalY});
+            currentPoints.push([normX, invY]);
+            drawGridAndShape();
+            const lineType = orthoEnabled ? (Math.abs(mouseX - points[points.length-2]?.x) >= Math.abs(mouseY - points[points.length-2]?.y) ? 'горизонталь' : 'вертикаль') : '';
+            updateStatus(`Точка ${points.length} добавлена${orthoEnabled ? ` (${lineType})` : ''}`);
+        } else if (currentShape === 'cone' && coneParams) {
+            normX = (finalX - coneParams.leftX) / coneParams.width;
+            normY = (finalY - coneParams.topY) / coneParams.height;
+            normX = Math.min(1, Math.max(0, normX));
+            normY = Math.min(1, Math.max(0, normY));
+            points.push({x: finalX, y: finalY});
+            currentPoints.push([normX, normY]);
+            drawGridAndShape();
+            const lineType = orthoEnabled ? (Math.abs(mouseX - points[points.length-2]?.x) >= Math.abs(mouseY - points[points.length-2]?.y) ? 'горизонталь' : 'вертикаль') : '';
+            updateStatus(`Точка ${points.length} добавлена${orthoEnabled ? ` (${lineType})` : ''}`);
+        } else if (currentShape === 'cylinder' && cylinderParams) {
+            normX = (finalX - cylinderParams.leftX) / cylinderParams.width;
+            normY = (finalY - cylinderParams.topY) / cylinderParams.height;
+            normX = Math.min(1, Math.max(0, normX));
+            normY = Math.min(1, Math.max(0, normY));
+            points.push({x: finalX, y: finalY});
+            currentPoints.push([normX, normY]);
+            drawGridAndShape();
+            const lineType = orthoEnabled ? (Math.abs(mouseX - points[points.length-2]?.x) >= Math.abs(mouseY - points[points.length-2]?.y) ? 'горизонталь' : 'вертикаль') : '';
+            updateStatus(`Точка ${points.length} добавлена${orthoEnabled ? ` (${lineType})` : ''}`);
+        }
+        updatePointsUI();
+    });
+
+    function startDrawing() {
+        isDrawing = true;
+        canvas.classList.add('drawing-active');
+        updateStatus('Режим рисования активен. Кликайте в любом месте холста' + (orthoEnabled ? ' (ОРТОГОНАЛЬНЫЙ РЕЖИМ: горизонталь/вертикаль)' : ''));
+    }
+    function undoPoint() {
+        if(points.length) {
+            points.pop();
+            currentPoints.pop();
+            drawGridAndShape();
+            updatePointsUI();
+            updateStatus('Точка удалена');
+        }
+    }
+    function closeContour() {
+        if(points.length >= 3) {
+            isDrawing = false;
+            canvas.classList.remove('drawing-active');
+            drawGridAndShape();
+            updateStatus('Контур замкнут. Можно генерировать модель', false, true);
+        } else {
+            updateStatus('Минимум 3 точки для замыкания', true);
+        }
+    }
+    function clearAll() {
+        points = [];
+        currentPoints = [];
+        isDrawing = false;
+        modelData = null;
+        canvas.classList.remove('drawing-active');
+        drawGridAndShape();
+        updatePointsUI();
+        downloadStepBtn.disabled = true;
+        downloadStlBtn.disabled = true;
+        downloadPNGBtn.disabled = true;
+        updateStatus('Контур очищен');
+    }
+
+    function selectShape(shape) {
+        currentShape = shape;
+        shapeBtns.forEach(btn => {
+            btn.classList.remove('active');
+            if(btn.dataset.shape === shape) btn.classList.add('active');
+        });
+        clearAll();
+        updateStatus(`Выбрана ${shape==='sphere'?'сфера':shape==='cone'?'коническая поверхность':'цилиндрическая поверхность'}`);
+        drawGridAndShape();
+    }
+
+    function setFormat(fmt) {
+        selectedFormat = fmt;
+        if(fmt === 'step') { formatStep.classList.add('active'); formatStl.classList.remove('active'); }
+        else { formatStl.classList.add('active'); formatStep.classList.remove('active'); }
+        updateStatus(`Формат: ${fmt.toUpperCase()}`);
+    }
+
+    function toggleOrtho() {
+        orthoEnabled = !orthoEnabled;
+        if (orthoEnabled) {
+            orthoToggle.classList.add('active');
+            updateStatus('ОРТОГОНАЛЬНЫЙ РЕЖИМ ВКЛЮЧЕН — линии строго горизонтальны/вертикальны', false);
+        } else {
+            orthoToggle.classList.remove('active');
+            updateStatus('ОРТОГОНАЛЬНЫЙ РЕЖИМ ОТКЛЮЧЕН — свободное размещение точек', false);
+        }
+        if (isDrawing) {
+            updateStatus(`Рисование активно, ${orthoEnabled ? 'ортогональная привязка' : 'свободное размещение'}`);
+        }
+    }
+
+    async function generateModel() {
+        if(currentPoints.length < 3) {
+            updateStatus('Необходимо минимум 3 точки контура', true);
+            return;
+        }
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        updateStatus('Генерация 3D модели...');
+        try {
+            const response = await fetch('/api/create-model', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ shape: currentShape, points: currentPoints })
+            });
+            if(!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            if(data.success) {
+                modelData = data;
+                if(data.downloads.step) downloadStepBtn.disabled = false;
+                if(data.downloads.stl) downloadStlBtn.disabled = false;
+                if(data.downloads.svg) downloadPNGBtn.disabled = false;
+                updateStatus('Модель готова', false, true);
+                generateBtn.classList.add('power-flash');
+                setTimeout(() => generateBtn.classList.remove('power-flash'), 300);
+            } else {
+                throw new Error(data.message);
+            }
+        } catch(err) {
+            updateStatus(`Ошибка: ${err.message}`, true);
+            console.error(err);
+        } finally {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+    }
+
+    function downloadFile(url, filename) {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    }
+
+    function downloadModel() {
+        if(!modelData) { updateStatus('Модель не создана', true); return; }
+        if(selectedFormat === 'step' && modelData.downloads.step) {
+            downloadFile(modelData.downloads.step.url, modelData.downloads.step.filename);
+            updateStatus('Скачивание STEP...');
+        } else if(selectedFormat === 'stl' && modelData.downloads.stl) {
+            downloadFile(modelData.downloads.stl.url, modelData.downloads.stl.filename);
+            updateStatus('Скачивание STL...');
+        } else {
+            updateStatus('Файл не доступен', true);
+        }
+    }
+
+    async function downloadPNG() {
+        if(!modelData?.downloads?.svg) {
+            updateStatus('SVG-чертежи не доступны', true);
+            return;
+        }
+        updateStatus('Сборка PNG...');
+        const views = ['top', 'front', 'left'];
+        const urls = {
+            top: modelData.downloads.svg.top.url,
+            front: modelData.downloads.svg.front.url,
+            left: modelData.downloads.svg.left.url
+        };
+        try {
+            const svgTexts = await Promise.all(views.map(v => fetch(urls[v]).then(r => r.text())));
+            const images = await Promise.all(svgTexts.map(async (svg, idx) => {
+                const blob = new Blob([svg], {type: 'image/svg+xml'});
+                const url = URL.createObjectURL(blob);
+                const img = new Image();
+                await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
+                URL.revokeObjectURL(url);
+                return img;
+            }));
+            const size = 500;
+            const canvasPNG = document.createElement('canvas');
+            canvasPNG.width = size;
+            canvasPNG.height = size * 3;
+            const pctx = canvasPNG.getContext('2d');
+            pctx.fillStyle = '#171a1f';
+            pctx.fillRect(0, 0, canvasPNG.width, canvasPNG.height);
+            for(let i=0; i<images.length; i++) {
+                pctx.drawImage(images[i], 0, i*size, size, size);
+            }
+            const link = document.createElement('a');
+            link.download = `${modelData.base_filename}_3views.png`;
+            link.href = canvasPNG.toDataURL('image/png');
+            link.click();
+            updateStatus('PNG сохранён');
+        } catch(e) {
+            console.error(e);
+            updateStatus('Ошибка создания PNG', true);
+        }
+    }
+
+    function init() {
+        resizeCanvas();
+        shapeBtns.forEach(btn => btn.addEventListener('click', () => selectShape(btn.dataset.shape)));
+        startDrawBtn.addEventListener('click', startDrawing);
+        undoBtn.addEventListener('click', undoPoint);
+        closeBtn.addEventListener('click', closeContour);
+        clearBtn.addEventListener('click', clearAll);
+        generateBtn.addEventListener('click', generateModel);
+        formatStep.addEventListener('click', () => setFormat('step'));
+        formatStl.addEventListener('click', () => setFormat('stl'));
+        downloadStepBtn.addEventListener('click', downloadModel);
+        downloadStlBtn.addEventListener('click', downloadModel);
+        downloadPNGBtn.addEventListener('click', downloadPNG);
+        orthoToggle.addEventListener('click', toggleOrtho);
+        selectShape('cone');
+        setFormat('step');
+        updateStatus('Система готова. ORTHO — строгая горизонталь/вертикаль');
+    }
+    init();
+</script>
+</body>
+</html>
