@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>IndF Workbench | Инструменты</title>
+    <!-- Industrial monospace fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Major+Mono+Display&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* Industrial Futurism CSS variables */
+        :root {
+            --metal-base: #171a1f;
+            --metal-panel: #1f232a;
+            --metal-canvas: #1e2129;
+            --metal-border: #3a3e48;
+            --text-primary: #eef2f8;
+            --text-secondary: #9ca3b5;
+            --orange-pulse: #ff5500;
+            --orange-active: #e6451a;
+            --orange-glow: #b53a0a;
+            --orange-preview: #ff8c42;
+            --cyan-system: #00a6c4;
+            --cyan-sensor: #2a9d8f;
+            --success: #4caf50;
+            --error: #ff5e5e;
+            --warning: #ffb347;
+        }
+
+        body {
+            background-color: var(--metal-base);
+            /* brushed metal texture */
+            background-image: repeating-linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.02) 0px,
+                rgba(255, 255, 255, 0.02) 1px,
+                transparent 1px,
+                transparent 12px
+            );
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-container {
+            max-width: 1600px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2rem 2rem 1rem;
+            flex: 1;
+        }
+
+        /* Typography */
+        h1 {
+            font-family: 'Major Mono Display', monospace;
+            font-weight: 400;
+            font-size: 2.4rem;
+            color: var(--text-primary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .title-accent {
+            color: var(--orange-pulse);
+        }
+        .subhead {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-left: 3px solid var(--orange-glow);
+            padding-left: 1rem;
+            margin-top: 0.5rem;
+            margin-bottom: 2rem;
+            font-family: monospace;
+            letter-spacing: 0.3px;
+        }
+
+        /* Energy signal canvas (minimal oscilloscope) */
+        .signal-canvas {
+            width: 100%;
+            height: 56px;
+            background: #0c0f14;
+            border: 1px solid var(--metal-border);
+            margin: 0.5rem 0 2rem 0;
+            border-radius: 2px;
+        }
+
+        /* Tools grid - FULL WIDTH with larger cards */
+        .tools-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 2rem;
+            margin: 1.8rem 0 2.5rem;
+        }
+
+        .tool-card {
+            background: var(--metal-panel);
+            border: 1px solid var(--metal-border);
+            border-radius: 4px;
+            padding: 1.8rem 1.5rem;
+            transition: all 0.1s ease;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            position: relative;
+            box-shadow: inset 0 0 0 1px rgba(255,85,0,0.02), 0 6px 14px rgba(0,0,0,0.4);
+        }
+        /* welded double border effect */
+        .tool-card::before {
+            content: '';
+            position: absolute;
+            top: -1px;
+            left: -1px;
+            right: -1px;
+            bottom: -1px;
+            border: 1px solid rgba(255,85,0,0.12);
+            border-radius: 4px;
+            pointer-events: none;
+        }
+        .tool-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--orange-active);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,85,0,0.25);
+        }
+        .tool-card:active {
+            transform: translateY(1px);
+        }
+        .tool-icon {
+            font-size: 2.5rem;
+            color: var(--cyan-system);
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tool-card:hover .tool-icon {
+            color: var(--orange-pulse);
+            text-shadow: 0 0 6px rgba(255,85,0,0.5);
+            transform: scale(1.02);
+        }
+        /* специальный стиль для математического символа пересечения */
+        .math-intersection {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            font-size: 2.2rem;
+            letter-spacing: 0;
+        }
+        .tool-title {
+            font-family: 'Major Mono Display', monospace;
+            font-size: 1.2rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            border-left: 4px solid var(--orange-glow);
+            padding-left: 0.9rem;
+            letter-spacing: 0.8px;
+            line-height: 1.3;
+        }
+        .tool-desc {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-family: monospace;
+            line-height: 1.5;
+        }
+        .tool-tag {
+            font-size: 0.7rem;
+            background: rgba(0,166,196,0.12);
+            display: inline-block;
+            width: fit-content;
+            padding: 0.3rem 0.8rem;
+            border-radius: 3px;
+            color: var(--cyan-system);
+            letter-spacing: 0.3px;
+        }
+
+        /* Telemetry line - minimal status */
+        .telemetry {
+            background: #0f1117;
+            border-top: 2px solid var(--orange-pulse);
+            padding: 0.8rem 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        .telemetry-message-area {
+            display: flex;
+            gap: 1rem;
+            align-items: baseline;
+            flex-wrap: wrap;
+        }
+        .telemetry-prefix {
+            color: var(--success);
+            font-weight: 600;
+        }
+        .telemetry-prefix.error { color: var(--error); }
+        .telemetry-prefix.warning { color: var(--warning); }
+        .telemetry-prefix.info { color: var(--cyan-system); }
+        .telemetry-text {
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        /* Power flash animation */
+        @keyframes powerFlash {
+            0% { box-shadow: 0 0 0 0 var(--orange-pulse), inset 0 0 0 1px rgba(255,85,0,0.9); border-color: var(--orange-pulse); }
+            70% { box-shadow: 0 0 0 16px rgba(255,85,0,0), inset 0 0 0 3px rgba(255,85,0,0.2); border-color: var(--orange-pulse); }
+            100% { box-shadow: 0 0 0 0 rgba(255,85,0,0), inset 0 0 0 1px rgba(255,85,0,0); border-color: var(--metal-border); }
+        }
+        .power-flash {
+            animation: powerFlash 0.22s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+
+        .tool-card:focus-visible {
+            outline: 2px solid var(--orange-pulse);
+            outline-offset: 3px;
+        }
+
+        /* Responsive: on smaller screens cards still big enough */
+        @media (max-width: 800px) {
+            .main-container { padding: 1.2rem; }
+            h1 { font-size: 1.8rem; }
+            .tools-grid { 
+                grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+                gap: 1.5rem;
+            }
+            .tool-card { padding: 1.5rem 1.2rem; }
+            .tool-title { font-size: 1rem; }
+            .telemetry { padding: 0.6rem 1rem; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+        }
+
+        @media (min-width: 1400px) {
+            .tools-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+            .tool-card {
+                padding: 2rem 1.6rem;
+            }
+            .tool-title {
+                font-size: 1.25rem;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <!-- Minimal header: no extra banners or verbose status -->
+    <div>
+        <h1>
+            <i class="fas fa-cogs" style="color: #ff5500; font-size: 1.8rem;"></i>
+            IND‑F<span class="title-accent">//WORKBENCH</span>
+        </h1>
+        <div class="subhead">
+            инструменты инженерной геометрии · полномасштабная рабочая среда
+        </div>
+    </div>
+
+    <!-- Compact energy signal (no labels) -->
+    <canvas id="energyCanvas" class="signal-canvas" width="1000" height="56" style="width:100%; height:56px"></canvas>
+
+    <!-- 8 core tools - expanded layout, corrected intersection icon with math symbol ∩ -->
+    <div class="tools-grid" id="toolsGrid">
+        <a href="#" class="tool-card" data-tool="VYREZY_TEL_VRASCHENIYA" data-name="Вырезы на телах вращения">
+            <div class="tool-icon"><i class="fas fa-circle-notch"></i></div>
+            <div class="tool-title">ВЫРЕЗЫ НА ТЕЛАХ ВРАЩЕНИЯ</div>
+            <div class="tool-desc">Сечения, пазы, сложная геометрия цилиндров, конусов и сфер. Построение разрезов и параметрические вырезы.</div>
+            <div class="tool-tag"><i class="fas fa-sync-alt"></i> ротационный конструктор</div>
+        </a>
+        <a href="#" class="tool-card" data-tool="VYREZY_MNOGOGRAINIKI" data-name="Вырезы на многогранниках">
+            <div class="tool-icon"><i class="fas fa-cube"></i></div>
+            <div class="tool-title">ВЫРЕЗЫ НА МНОГОГРАННИКАХ</div>
+            <div class="tool-desc">Призмы, пирамиды, платоновы тела. Динамическое удаление частей и развёртки сложных полиэдров.</div>
+            <div class="tool-tag"><i class="fas fa-shapes"></i> полиэдральный модуль</div>
+        </a>
+        <a href="#" class="tool-card" data-tool="AKSONOMETRIYA" data-name="Аксонометрия">
+            <div class="tool-icon"><i class="fas fa-draw-polygon"></i></div>
+            <div class="tool-title">АКСОНОМЕТРИЯ</div>
+            <div class="tool-desc">Изометрическая, диметрическая проекции с направляющими. Вращение сцены и точная настройка углов.</div>
+            <div class="tool-tag"><i class="fas fa-arrows-alt"></i> 3D проекции</div>
+        </a>
+        <a href="#" class="tool-card" data-tool="EPUR_MONGE" data-name="Эпюр Монжа интерактивный">
+            <div class="tool-icon"><i class="fas fa-chalkboard"></i></div>
+            <div class="tool-title">ЭПЮР МОНЖА <span style="color:#ff8c42;">ИНТЕРАКТИВНЫЙ</span></div>
+            <div class="tool-desc">Двухпроекционный чертёж с линиями связи, следами и автоматической координацией точек.</div>
+            <div class="tool-tag"><i class="fas fa-project-diagram"></i> начертательная геометрия</div>
+        </a>
+        <a href="#" class="tool-card" data-tool="PERESECHENIYA" data-name="Пересечения">
+            <!-- ИСПРАВЛЕННЫЙ ЗНАЧОК: математический символ пересечения ∩ (U+2229) -->
+            <div class="tool-icon">
+                <span class="math-intersection">∩</span>
+            </div>
+            <div class="tool-title">ПЕРЕСЕЧЕНИЯ</div>
+            <div class="tool-desc">Линии пересечения многогранников и поверхностей. Метод секущих плоскостей и точные алгоритмы.</div>
+            <div class="tool-tag"><i class="fas fa-chart-line"></i> кривые перехода</div>
+        </a>
+        <a href="#" class="tool-card" data-tool="RAZVERTKI" data-name="Развёртки">
+            <div class="tool-icon"><i class="fas fa-layer-group"></i></div>
+            <div class="tool-title">РАЗВЁРТКИ</div>
+            <div class="tool-desc">Плоские развёртки призм, цилиндров, конусов и составных тел с припусками на стыковку.</div>
+            <div class="tool-tag"><i class="fas fa-ruler-combined"></i> листовой металл / net</div>
+        </a>
+        <a href="#" class="tool-card" data-tool="LEKCII" data-name="Лекции">
+            <div class="tool-icon"><i class="fas fa-microphone-alt"></i></div>
+            <div class="tool-title">ЛЕКЦИИ</div>
+            <div class="tool-desc">Видео-лекции, методические материалы по инженерной графике и параметрическому моделированию.</div>
+            <div class="tool-tag"><i class="fas fa-graduation-cap"></i> технологический курс</div>
+        </a>
+        <a href="#" class="tool-card" data-tool="GUIDE" data-name="Гайд">
+            <div class="tool-icon"><i class="fas fa-map-signs"></i></div>
+            <div class="tool-title">ГАЙД</div>
+            <div class="tool-desc">Быстрый старт, навигация, горячие клавиши и эффективное моделирование в среде IndF.</div>
+            <div class="tool-tag"><i class="fas fa-book-open"></i> система поддержки</div>
+        </a>
+    </div>
+</div>
+
+<!-- Telemetry line: clean status, no extra "protocols" -->
+<div class="telemetry" id="telemetryBar">
+    <div class="telemetry-message-area">
+        <span class="telemetry-prefix" id="telemetryPrefix">[OK]</span>
+        <span class="telemetry-text" id="telemetryMessage">СИСТЕМА ГОТОВА · ПОЛНОРАЗМЕРНЫЙ РЕЖИМ</span>
+    </div>
+    <div class="telemetry-badge" style="color:#9ca3b5; font-size:0.7rem;">
+        <i class="fas fa-bolt"></i> активный пульт
+    </div>
+</div>
+
+<script>
+    (function() {
+        // Energy canvas (minimal oscilloscope, no text labels) — enhanced for bigger canvas
+        const canvas = document.getElementById('energyCanvas');
+        if (canvas) {
+            let ctx = canvas.getContext('2d');
+            let width, height;
+            let phase = 0;
+            let animId = null;
+
+            function resizeCanvas() {
+                const rect = canvas.getBoundingClientRect();
+                width = rect.width;
+                height = rect.height;
+                canvas.width = width;
+                canvas.height = height;
+                drawWave();
+            }
+
+            function drawWave() {
+                if (!ctx || width === 0 || height === 0) return;
+                ctx.clearRect(0, 0, width, height);
+                ctx.fillStyle = '#0c0f14';
+                ctx.fillRect(0, 0, width, height);
+
+                // Enhanced grid lines (subtle but industrial)
+                ctx.beginPath();
+                ctx.strokeStyle = '#3a3e48';
+                ctx.lineWidth = 0.6;
+                for (let y = height/3; y < height; y += height/3) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                }
+                // faint vertical markers
+                ctx.beginPath();
+                ctx.strokeStyle = '#2f3540';
+                ctx.lineWidth = 0.3;
+                for (let x = width/8; x < width; x += width/8) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, height);
+                    ctx.stroke();
+                }
+
+                const centerY = height / 2;
+                const amp = height * 0.32;
+                const step = Math.max(2, width / 85);
+                
+                // primary orange discharge wave (energetic)
+                ctx.beginPath();
+                for (let i = 0; i <= width; i += step) {
+                    let t = (i / width) * Math.PI * 7 + phase;
+                    let yVal = centerY + Math.sin(t) * amp + Math.sin(t * 1.9) * (amp * 0.28);
+                    yVal = Math.min(height - 4, Math.max(4, yVal));
+                    if (i === 0) ctx.moveTo(i, yVal);
+                    else ctx.lineTo(i, yVal);
+                }
+                ctx.strokeStyle = '#ff5500';
+                ctx.lineWidth = 2.2;
+                ctx.shadowBlur = 4;
+                ctx.shadowColor = '#ff5500';
+                ctx.stroke();
+
+                // cyan system layer (data carrier)
+                ctx.beginPath();
+                for (let i = 0; i <= width; i += step) {
+                    let t = (i / width) * Math.PI * 6 + phase + 1.5;
+                    let yVal = centerY + Math.cos(t * 1.3) * (amp * 0.48) + Math.sin(t * 2.4) * 6;
+                    yVal = Math.min(height - 4, Math.max(4, yVal));
+                    if (i === 0) ctx.moveTo(i, yVal);
+                    else ctx.lineTo(i, yVal);
+                }
+                ctx.strokeStyle = '#00a6c4';
+                ctx.lineWidth = 1.6;
+                ctx.shadowBlur = 3;
+                ctx.shadowColor = '#00a6c4';
+                ctx.stroke();
+                
+                // add small 'glitch' pulses randomly? minimal.
+                ctx.shadowBlur = 0;
+            }
+
+            function animate() {
+                phase += 0.048;
+                drawWave();
+                animId = requestAnimationFrame(animate);
+            }
+
+            function initCanvas() {
+                resizeCanvas();
+                window.addEventListener('resize', resizeCanvas);
+                animate();
+            }
+            initCanvas();
+            
+            window.addEventListener('beforeunload', () => {
+                if (animId) cancelAnimationFrame(animId);
+            });
+            
+            const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+            if (motionQuery.matches && animId) {
+                cancelAnimationFrame(animId);
+                if(ctx) {
+                    ctx.fillStyle = '#0c0f14';
+                    ctx.fillRect(0,0, canvas.width, canvas.height);
+                }
+            }
+        }
+
+        // Telemetry update logic (industrial style)
+        const telemetryPrefixSpan = document.getElementById('telemetryPrefix');
+        const telemetryMsgSpan = document.getElementById('telemetryMessage');
+
+        function setTelemetry(prefixType, message, colorType = 'success') {
+            let prefix = '';
+            switch(prefixType) {
+                case 'OK': prefix = '[OK]'; break;
+                case 'ERR': prefix = '[ERR]'; break;
+                case 'ACT': prefix = '[ACT]'; break;
+                case 'RUN': prefix = '[RUN]'; break;
+                case 'PRV': prefix = '[PRV]'; break;
+                default: prefix = `[${prefixType}]`;
+            }
+            telemetryPrefixSpan.innerText = prefix;
+            telemetryMsgSpan.innerText = message;
+            telemetryPrefixSpan.classList.remove('error', 'warning', 'info');
+            if (colorType === 'error') telemetryPrefixSpan.classList.add('error');
+            else if (colorType === 'warning') telemetryPrefixSpan.classList.add('warning');
+            else if (colorType === 'info') telemetryPrefixSpan.classList.add('info');
+        }
+
+        function addPowerFlash(element) {
+            element.classList.add('power-flash');
+            setTimeout(() => { element.classList.remove('power-flash'); }, 250);
+        }
+
+        const cards = document.querySelectorAll('.tool-card');
+        let hoverTimeout;
+
+        cards.forEach(card => {
+            const toolName = card.getAttribute('data-name') || card.querySelector('.tool-title')?.innerText || 'инструмент';
+            card.addEventListener('mouseenter', () => {
+                if (hoverTimeout) clearTimeout(hoverTimeout);
+                setTelemetry('PRV', `${toolName} | подготовлен к активации`, 'info');
+            });
+            card.addEventListener('mouseleave', () => {
+                hoverTimeout = setTimeout(() => {
+                    setTelemetry('OK', 'система ожидает команду · полная готовность', 'success');
+                }, 200);
+            });
+            card.addEventListener('click', (e) => {
+                e.preventDefault();
+                addPowerFlash(card);
+                if (navigator.vibrate) navigator.vibrate(40);
+                setTelemetry('RUN', `запуск модуля: ${toolName}`, 'info');
+                // subtle grid feedback (full width scale effect)
+                const grid = document.querySelector('.tools-grid');
+                if (grid) {
+                    grid.style.transition = '0.08s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
+                    grid.style.transform = 'scale(0.99)';
+                    setTimeout(() => { grid.style.transform = ''; }, 120);
+                }
+                // simulate module activation, keep telemetry coherent
+                setTimeout(() => {
+                    if (!document.querySelector('.tool-card:hover')) {
+                        setTelemetry('OK', `${toolName} активирован · интерфейс загружен`, 'success');
+                    } else {
+                        setTelemetry('ACT', `${toolName} → активная сессия`, 'success');
+                    }
+                }, 750);
+                console.log(`[IndF Workbench] запущен инструмент: ${toolName}`);
+                // optional: show additional runtime feedback
+            });
+        });
+
+        // initial telemetry after full page load
+        setTelemetry('OK', 'система готова · полноразмерные карточки', 'success');
+        
+        // дополнительная адаптация под ширину: гарантия, что сетка всегда заполняет пространство
+        function adjustGridFullness() {
+            const grid = document.querySelector('.tools-grid');
+            if (grid) {
+                const containerWidth = document.querySelector('.main-container')?.clientWidth || window.innerWidth;
+                if (containerWidth >= 1400) {
+                    grid.style.gridTemplateColumns = 'repeat(4, 1fr)';
+                } else if (containerWidth >= 1000) {
+                    grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(350px, 1fr))';
+                } else {
+                    grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(300px, 1fr))';
+                }
+            }
+        }
+        window.addEventListener('resize', () => { setTimeout(adjustGridFullness, 50); });
+        adjustGridFullness();
+    })();
+</script>
+</body>
+</html>

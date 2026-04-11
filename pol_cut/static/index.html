@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Генератор многогранников с вырезом (HLR)</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #1a1e2a; font-family: monospace; color: #eef2f8; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { max-width: 1400px; width: 100%; background: #0f1117; border: 1px solid #ff5500; border-radius: 8px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .title { font-size: 1.5rem; margin-bottom: 20px; border-left: 4px solid #ff5500; padding-left: 16px; }
+        .flex-row { display: flex; gap: 24px; flex-wrap: wrap; }
+        .canvas-panel { flex: 2; min-width: 300px; }
+        .controls-panel { flex: 1; min-width: 280px; }
+        .canvas-container { background: #1e2129; border: 1px solid #3a3e48; border-radius: 4px; margin-bottom: 20px; }
+        canvas { width: 100%; display: block; background: #1e2129; cursor: crosshair; }
+        .status { background: #0a0c10; padding: 10px; font-family: monospace; font-size: 0.8rem; margin-top: 12px; border-left: 3px solid #ff5500; }
+        .shape-selector { display: flex; gap: 12px; margin-bottom: 20px; }
+        .shape-btn { flex: 1; background: #0f1117; border: 1px solid #3a3e48; padding: 12px; text-align: center; cursor: pointer; font-weight: bold; }
+        .shape-btn.active { border-bottom: 2px solid #ff5500; color: #ff5500; }
+        .btn { background: #0f1117; border: 1px solid #3a3e48; padding: 10px 16px; cursor: pointer; font-weight: bold; margin-top: 12px; width: 100%; }
+        .btn-primary { border-left: 2px solid #ff5500; }
+        .btn-primary:hover { border-color: #ff5500; transform: translateY(-1px); }
+        .btn:active { transform: translateY(1px); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .info { margin-top: 20px; font-size: 0.8rem; background: #0f1117; padding: 12px; border-radius: 4px; }
+        .points-list { max-height: 150px; overflow-y: auto; background: #0a0c10; padding: 8px; font-size: 0.7rem; margin-top: 12px; }
+        .point-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #2a2c34; }
+        .download-group { display: flex; gap: 12px; margin-top: 12px; }
+        .download-btn { flex: 1; background: #0f1117; border: 1px solid #3a3e48; padding: 10px; cursor: pointer; text-align: center; font-size: 0.8rem; }
+        .loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+        .loader { background: #1f232a; padding: 30px; border: 1px solid #ff5500; border-radius: 8px; text-align: center; }
+        .spinner { width: 40px; height: 40px; border: 3px solid #3a3e48; border-top-color: #ff5500; border-radius: 50%; animation: spin 0.6s linear infinite; margin: 0 auto 16px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .side-selector { display: flex; gap: 12px; margin: 15px 0; justify-content: center; }
+        .side-btn { background: #0f1117; border: 1px solid #3a3e48; padding: 10px 20px; cursor: pointer; text-align: center; font-size: 0.9rem; }
+        .side-btn.active { border-color: #ff5500; color: #ff5500; background: #1a1e28; }
+        .debug-info { position: absolute; bottom: 5px; left: 10px; font-size: 11px; color: #aaa; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px; pointer-events: none; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="title">🔺 Генератор многогранников с вырезом (HLR)</div>
+    <div class="flex-row">
+        <div class="canvas-panel">
+            <div class="canvas-container" style="position: relative;">
+                <canvas id="polyCanvas" width="600" height="600"></canvas>
+                <div class="debug-info" id="debugInfo">—</div>
+            </div>
+            <div class="status" id="statusMsg">🟢 Готов. Этап 1: Создание тела</div>
+        </div>
+        <div class="controls-panel">
+            <div id="stage1Panel">
+                <div class="shape-selector">
+                    <button class="shape-btn pyramid" data-shape="pyramid">Пирамида</button>
+                    <button class="shape-btn prism active" data-shape="prism">Призма</button>
+                </div>
+                <button id="startBaseBtn" class="btn btn-primary">✏️ Рисовать основание</button>
+                <button id="clearBaseBtn" class="btn">🗑️ Очистить основание</button>
+                <button id="setApexBtn" class="btn btn-primary" disabled>📍 Установить точку (вершина/центр)</button>
+                <button id="generateBtn" class="btn btn-primary" disabled>⚡ Сгенерировать 3D модель</button>
+                <div class="info">
+                    <strong>Этап 1: Создание тела</strong><br>
+                    1. Выберите тип (пирамида / призма).<br>
+                    2. Нажмите "Рисовать основание" и кликайте по холсту (минимум 3 точки).<br>
+                    3. Нажмите "Установить точку" и кликните один раз – это вершина/центр.<br>
+                    4. Нажмите "Сгенерировать модель".
+                </div>
+                <div class="points-list" id="basePointsList"><div style="text-align:center; color:#9ca3b5;">Основание: нет точек</div></div>
+                <div class="points-list" id="apexPointDisplay"><div style="text-align:center; color:#9ca3b5;">Точка: не установлена</div></div>
+            </div>
+            <div id="stage2Panel" style="display:none;">
+                <div class="info"><strong>Этап 2: Вырез</strong><br>Выберите сторону для выреза.</div>
+                <div class="side-selector">
+                    <button class="side-btn" data-side="front">Передняя</button>
+                    <button class="side-btn" data-side="left">Левая</button>
+                </div>
+                <button id="loadProjectionBtn" class="btn btn-primary">📐 Загрузить проекцию (HLR)</button>
+                <button id="startCutBtn" class="btn btn-primary" disabled>✂️ Рисовать контур выреза</button>
+                <button id="clearCutBtn" class="btn">🗑️ Очистить контур</button>
+                <button id="applyCutBtn" class="btn btn-primary" disabled>🔪 Применить вырез</button>
+                <button id="exportDrawingBtn" class="btn btn-primary" style="margin-top: 12px;">
+                    🖼️ Экспорт чертежа (3 проекции SVG)
+                </button>
+                <div class="points-list" id="cutPointsList"><div style="text-align:center; color:#9ca3b5;">Контур выреза: нет точек</div></div>
+            </div>
+            <div class="download-group" id="downloadGroup" style="display:none;">
+                <button id="downloadStep" class="download-btn">📥 STEP</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div id="loadingOverlay" class="loading" style="display:none;"><div class="loader"><div class="spinner"></div><div>Генерация...</div></div></div>
+
+<script>
+    const canvas = document.getElementById('polyCanvas');
+    const ctx = canvas.getContext('2d');
+    let width = 600, height = 600;
+    canvas.width = width; canvas.height = height;
+    ctx.setTransform(1, 0, 0, -1, 0, height);
+    
+    let currentShape = 'prism';
+    let basePoints = [];
+    let apexPoint = null;
+    let mode = 'idle';
+    let currentBaseFilename = null;
+    let currentSide = 'front';
+    let cutPoints = [];
+    let showProjection = false;
+    let hlrData = null;
+    
+    const shapeBtns = document.querySelectorAll('.shape-btn');
+    const startBaseBtn = document.getElementById('startBaseBtn');
+    const clearBaseBtn = document.getElementById('clearBaseBtn');
+    const setApexBtn = document.getElementById('setApexBtn');
+    const generateBtn = document.getElementById('generateBtn');
+    const statusDiv = document.getElementById('statusMsg');
+    const basePointsDiv = document.getElementById('basePointsList');
+    const apexPointDiv = document.getElementById('apexPointDisplay');
+    const stage1Panel = document.getElementById('stage1Panel');
+    const stage2Panel = document.getElementById('stage2Panel');
+    const downloadGroup = document.getElementById('downloadGroup');
+    const downloadStep = document.getElementById('downloadStep');
+    const sideBtns = document.querySelectorAll('.side-btn');
+    const loadProjectionBtn = document.getElementById('loadProjectionBtn');
+    const startCutBtn = document.getElementById('startCutBtn');
+    const clearCutBtn = document.getElementById('clearCutBtn');
+    const applyCutBtn = document.getElementById('applyCutBtn');
+    const cutPointsDiv = document.getElementById('cutPointsList');
+    const debugInfo = document.getElementById('debugInfo');
+    const exportDrawingBtn = document.getElementById('exportDrawingBtn');
+    
+    function drawGrid() {
+        ctx.save();
+        ctx.strokeStyle = '#2a2c34';
+        ctx.lineWidth = 0.5;
+        const step = width / 12;
+        for (let x = 0; x <= width; x += step) {
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+        }
+        for (let y = 0; y <= height; y += step) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+        }
+        ctx.restore();
+    }
+    
+    function computeBoundingBox(edges) {
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        for (let edge of edges) {
+            for (let [x, y] of edge) {
+                minX = Math.min(minX, x);
+                maxX = Math.max(maxX, x);
+                minY = Math.min(minY, y);
+                maxY = Math.max(maxY, y);
+            }
+        }
+        return { minX, maxX, minY, maxY };
+    }
+    
+    function drawHLR() {
+        if (!hlrData) return;
+        const visible = hlrData.visible;
+        const hidden = hlrData.hidden;
+        const allEdges = [...visible, ...hidden];
+        if (allEdges.length === 0) {
+            ctx.save();
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.fillStyle = '#aaa';
+            ctx.font = '14px monospace';
+            ctx.fillText('Нет линий для отображения', 20, 40);
+            ctx.restore();
+            return;
+        }
+        
+        const bb = computeBoundingBox(allEdges);
+        const margin = 40;
+        const scaleX = (width - 2*margin) / (bb.maxX - bb.minX);
+        const scaleY = (height - 2*margin) / (bb.maxY - bb.minY);
+        const scale = Math.min(scaleX, scaleY);
+        
+        function tr(p) {
+            return [
+                margin + (p[0] - bb.minX) * scale,
+                margin + (p[1] - bb.minY) * scale
+            ];
+        }
+        
+        ctx.save();
+        ctx.setLineDash([6, 4]);
+        ctx.strokeStyle = '#88aaff';
+        ctx.lineWidth = 5;
+        for (let edge of hidden) {
+            if (edge.length < 2) continue;
+            ctx.beginPath();
+            const [fx, fy] = tr(edge[0]);
+            ctx.moveTo(fx, fy);
+            for (let i = 1; i < edge.length; i++) {
+                const [x, y] = tr(edge[i]);
+                ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+        
+        ctx.setLineDash([]);
+        ctx.strokeStyle = '#ff8c42';
+        ctx.lineWidth = 2.5;
+        for (let edge of visible) {
+            if (edge.length < 2) continue;
+            ctx.beginPath();
+            const [fx, fy] = tr(edge[0]);
+            ctx.moveTo(fx, fy);
+            for (let i = 1; i < edge.length; i++) {
+                const [x, y] = tr(edge[i]);
+                ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+        ctx.restore();
+        
+        debugInfo.innerText = `V:${visible.length}  H:${hidden.length}`;
+    }
+    
+    function draw() {
+        ctx.clearRect(0, 0, width, height);
+        drawGrid();
+        
+        if (showProjection && hlrData) {
+            drawHLR();
+        } else {
+            debugInfo.innerText = '—';
+        }
+        
+        if (stage1Panel.style.display !== 'none' && basePoints.length >= 2) {
+            ctx.beginPath();
+            ctx.strokeStyle = '#ff8c42';
+            ctx.lineWidth = 2;
+            const first = basePoints[0];
+            ctx.moveTo(first[0] * width, first[1] * height);
+            for (let i = 1; i < basePoints.length; i++) {
+                ctx.lineTo(basePoints[i][0] * width, basePoints[i][1] * height);
+            }
+            if (basePoints.length >= 3) ctx.lineTo(first[0] * width, first[1] * height);
+            ctx.stroke();
+            basePoints.forEach((p, i) => {
+                ctx.fillStyle = '#ff5500';
+                ctx.beginPath(); ctx.arc(p[0] * width, p[1] * height, 5, 0, 2*Math.PI); ctx.fill();
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 12px monospace';
+                ctx.fillText(i+1, p[0]*width - 6, p[1]*height - 6);
+            });
+        }
+        
+        if (stage1Panel.style.display !== 'none' && apexPoint) {
+            ctx.fillStyle = '#00a6c4';
+            ctx.beginPath(); ctx.arc(apexPoint[0] * width, apexPoint[1] * height, 7, 0, 2*Math.PI); ctx.fill();
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 14px monospace';
+            ctx.fillText('★', apexPoint[0]*width - 4, apexPoint[1]*height + 5);
+        }
+        
+        if (cutPoints.length >= 2) {
+            ctx.beginPath();
+            ctx.strokeStyle = '#ff0000';
+            ctx.lineWidth = 2;
+            const first = cutPoints[0];
+            ctx.moveTo(first[0] * width, first[1] * height);
+            for (let i = 1; i < cutPoints.length; i++) {
+                ctx.lineTo(cutPoints[i][0] * width, cutPoints[i][1] * height);
+            }
+            if (cutPoints.length >= 3) ctx.lineTo(first[0] * width, first[1] * height);
+            ctx.stroke();
+            cutPoints.forEach((p, i) => {
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath(); ctx.arc(p[0] * width, p[1] * height, 4, 0, 2*Math.PI); ctx.fill();
+                ctx.fillStyle = '#fff'; ctx.font = 'bold 10px monospace';
+                ctx.fillText(i+1, p[0]*width - 4, p[1]*height - 4);
+            });
+        }
+    }
+    
+    function updateUI() {
+        startBaseBtn.disabled = (mode === 'base');
+        setApexBtn.disabled = (mode === 'apex') || (basePoints.length < 3);
+        generateBtn.disabled = (basePoints.length < 3) || (apexPoint === null);
+        
+        if (basePoints.length === 0) basePointsDiv.innerHTML = '<div style="text-align:center; color:#9ca3b5;">Основание: нет точек</div>';
+        else {
+            let html = '<div><strong>Основание (x,z):</strong></div>';
+            basePoints.forEach((p, idx) => { html += `<div class="point-item"><span>${idx+1}</span><span>X:${p[0].toFixed(3)} Z:${p[1].toFixed(3)}</span></div>`; });
+            basePointsDiv.innerHTML = html;
+        }
+        if (apexPoint) apexPointDiv.innerHTML = `<div><strong>Точка (x,z):</strong> ${apexPoint[0].toFixed(3)}, ${apexPoint[1].toFixed(3)}</div>`;
+        else apexPointDiv.innerHTML = '<div style="text-align:center; color:#9ca3b5;">Точка: не установлена</div>';
+        
+        if (cutPoints.length === 0) cutPointsDiv.innerHTML = '<div style="text-align:center; color:#9ca3b5;">Контур выреза: нет точек</div>';
+        else {
+            let html = '<div><strong>Контур выреза:</strong></div>';
+            cutPoints.forEach((p, idx) => { html += `<div class="point-item"><span>${idx+1}</span><span>U:${p[0].toFixed(3)} V:${p[1].toFixed(3)}</span></div>`; });
+            cutPointsDiv.innerHTML = html;
+        }
+    }
+    
+    function handleCanvasClick(e) {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = canvas.width / rect.width;
+        const scaleY = canvas.height / rect.height;
+        let mouseX = (e.clientX - rect.left) * scaleX;
+        let mouseY = (e.clientY - rect.top) * scaleY;
+        let normX = Math.min(1, Math.max(0, mouseX / width));
+        let normY = Math.min(1, Math.max(0, 1 - (mouseY / height)));
+        
+        if (mode === 'base') {
+            basePoints.push([normX, normY]);
+            updateUI(); draw();
+            statusDiv.innerText = `🔹 Точка основания ${basePoints.length} добавлена.`;
+            if (basePoints.length >= 3) { setApexBtn.disabled = false; statusDiv.innerText += ` Можно переходить к установке точки.`; }
+        } else if (mode === 'apex') {
+            apexPoint = [normX, normY];
+            mode = 'idle';
+            setApexBtn.disabled = true;
+            updateUI(); draw();
+            statusDiv.innerText = `📍 Точка установлена. Теперь можно генерировать модель.`;
+        } else if (mode === 'cut') {
+            cutPoints.push([normX, normY]);
+            updateUI(); draw();
+            statusDiv.innerText = `✂️ Точка контура ${cutPoints.length} добавлена.`;
+            if (cutPoints.length >= 3) applyCutBtn.disabled = false;
+        } else {
+            statusDiv.innerText = `❌ Сначала выберите режим.`;
+        }
+    }
+    
+    canvas.addEventListener('click', handleCanvasClick);
+    
+    shapeBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            shapeBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentShape = btn.dataset.shape;
+            basePoints = []; apexPoint = null; mode = 'idle'; currentBaseFilename = null; cutPoints = [];
+            stage2Panel.style.display = 'none'; downloadGroup.style.display = 'none'; stage1Panel.style.display = 'block';
+            hlrData = null; showProjection = false;
+            updateUI(); draw();
+            statusDiv.innerText = `🔄 Выбран тип: ${currentShape === 'pyramid' ? 'Пирамида' : 'Призма'}. Начните рисовать основание.`;
+        });
+    });
+    
+    startBaseBtn.addEventListener('click', () => { mode = 'base'; statusDiv.innerText = `✏️ Режим рисования основания. Кликайте по холсту (минимум 3 точки).`; updateUI(); });
+    clearBaseBtn.addEventListener('click', () => {
+        basePoints = []; apexPoint = null; mode = 'idle'; cutPoints = []; currentBaseFilename = null;
+        stage2Panel.style.display = 'none'; downloadGroup.style.display = 'none'; stage1Panel.style.display = 'block';
+        hlrData = null; showProjection = false;
+        updateUI(); draw(); statusDiv.innerText = `🧹 Основание и точка очищены.`;
+    });
+    setApexBtn.addEventListener('click', () => {
+        if (basePoints.length < 3) { statusDiv.innerText = `⚠️ Сначала нарисуйте основание (минимум 3 точки).`; return; }
+        mode = 'apex'; statusDiv.innerText = `📍 Режим установки точки. Кликните на холсте.`; updateUI();
+    });
+    
+    async function generateModel() {
+        if (basePoints.length < 3 || !apexPoint) { statusDiv.innerText = `❌ Основание (>=3) и точка должны быть заданы.`; return; }
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        try {
+            const response = await fetch('/api/generate', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ shape: currentShape, base_points: basePoints, apex_point: apexPoint })
+            });
+            const data = await response.json();
+            if (data.success) {
+                currentBaseFilename = data.base_filename;
+                basePoints = []; apexPoint = null; mode = 'idle'; cutPoints = [];
+                downloadGroup.style.display = 'flex';
+                downloadStep.onclick = () => downloadFile(data.downloads.step.url, data.downloads.step.filename);
+                stage1Panel.style.display = 'none'; stage2Panel.style.display = 'block';
+                statusDiv.innerText = `✅ Модель создана! Объём: ${data.volumes.total.toFixed(1)} мм³. Теперь выберите сторону для выреза.`;
+                sideBtns.forEach(btn => { btn.classList.remove('active'); if (btn.dataset.side === 'front') btn.classList.add('active'); });
+                currentSide = 'front';
+                loadProjectionBtn.disabled = false; startCutBtn.disabled = true; applyCutBtn.disabled = true;
+                hlrData = null; showProjection = false;
+                updateUI(); draw();
+            } else throw new Error(data.error || 'Unknown error');
+        } catch (err) { statusDiv.innerText = `❌ Ошибка: ${err.message}`; console.error(err); }
+        finally { document.getElementById('loadingOverlay').style.display = 'none'; }
+    }
+    generateBtn.addEventListener('click', generateModel);
+    
+    sideBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            sideBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentSide = btn.dataset.side;
+            loadProjectionBtn.disabled = false;
+            statusDiv.innerText = `Выбрана сторона: ${currentSide}. Нажмите "Загрузить проекцию (HLR)".`;
+            cutPoints = []; mode = 'idle'; startCutBtn.disabled = true; applyCutBtn.disabled = true;
+            hlrData = null; showProjection = false;
+            updateUI(); draw();
+        });
+    });
+    
+    loadProjectionBtn.addEventListener('click', async () => {
+        if (!currentBaseFilename) { statusDiv.innerText = '❌ Сначала создайте модель.'; return; }
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        try {
+            const response = await fetch(`/api/get-hlr?base_filename=${currentBaseFilename}&side=${currentSide}`);
+            if (!response.ok) throw new Error('Failed to load HLR');
+            const data = await response.json();
+            hlrData = data;
+            showProjection = true;
+            startCutBtn.disabled = false;
+            statusDiv.innerText = `📐 Проекция (HLR) загружена. Нажмите "Рисовать контур выреза" и кликайте по холсту.`;
+            draw(); 
+        } catch (err) { statusDiv.innerText = `❌ Ошибка загрузки проекции: ${err.message}`; console.error(err); }
+        finally { document.getElementById('loadingOverlay').style.display = 'none'; }
+    });
+    
+    startCutBtn.addEventListener('click', () => {
+        if (!hlrData) { statusDiv.innerText = `❌ Сначала загрузите проекцию.`; return; }
+        mode = 'cut'; cutPoints = []; applyCutBtn.disabled = true;
+        updateUI(); draw();
+        statusDiv.innerText = `✂️ Режим рисования контура выреза. Кликайте по холсту (минимум 3 точки).`;
+    });
+    
+    clearCutBtn.addEventListener('click', () => { cutPoints = []; mode = 'idle'; applyCutBtn.disabled = true; updateUI(); draw(); statusDiv.innerText = `🧹 Контур выреза очищен.`; });
+    
+    applyCutBtn.addEventListener('click', async () => {
+        if (cutPoints.length < 3) { statusDiv.innerText = `❌ Контур выреза должен содержать минимум 3 точки.`; return; }
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        try {
+            const response = await fetch('/api/apply-cut', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ base_filename: currentBaseFilename, side: currentSide, contour: cutPoints })
+            });
+            const data = await response.json();
+            if (data.success) {
+                currentBaseFilename = data.base_filename;
+                downloadGroup.style.display = 'flex';
+                downloadStep.onclick = () => downloadFile(data.downloads.step.url, data.downloads.step.filename);
+                statusDiv.innerText = `✅ Вырез применён! Новый объём: ${data.volumes.total.toFixed(1)} мм³.`;
+                cutPoints = []; mode = 'idle'; applyCutBtn.disabled = true; startCutBtn.disabled = true;
+                hlrData = null; showProjection = false;
+                updateUI(); draw();
+                statusDiv.innerText += ` Для нового выреза выберите сторону и загрузите проекцию снова.`;
+            } else throw new Error(data.error || 'Unknown error');
+        } catch (err) { statusDiv.innerText = `❌ Ошибка применения выреза: ${err.message}`; console.error(err); }
+        finally { document.getElementById('loadingOverlay').style.display = 'none'; }
+    });
+    
+    // Экспорт чертежа с тремя проекциями
+    exportDrawingBtn.addEventListener('click', async () => {
+        if (!currentBaseFilename) {
+            statusDiv.innerText = '❌ Сначала создайте модель.';
+            return;
+        }
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        try {
+            const res = await fetch(`/api/export-drawing?base_filename=${currentBaseFilename}`);
+            if (!res.ok) throw new Error('Ошибка экспорта');
+            
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${currentBaseFilename}_3views.svg`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            statusDiv.innerText = '✅ Чертеж с тремя проекциями сохранён (SVG)';
+        } catch (e) {
+            statusDiv.innerText = `❌ ${e.message}`;
+        } finally {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+    });
+    
+    function downloadFile(url, filename) { const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+    
+    updateUI(); draw(); statusDiv.innerText = 'Готов. Выберите тип, нажмите "Рисовать основание" и кликайте по холсту.';
+</script>
+</body>
+</html>

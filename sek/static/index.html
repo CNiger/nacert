@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Пересечение тел вращения</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+        body {
+            background: #171a1f;
+            font-family: 'JetBrains Mono', monospace;
+            color: #eef2f8;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            padding: 20px;
+        }
+        .dashboard {
+            display: flex;
+            gap: 24px;
+            flex: 1;
+            width: 100%;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+        .canvas-area {
+            flex: 3;
+            background: #1e2129;
+            border: 1px solid #3a3e48;
+            border-radius: 2px;
+            display: flex;
+            flex-direction: column;
+            padding: 12px;
+        }
+        .canvas-container {
+            position: relative;
+            flex: 1;
+        }
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            background: #1a1e28;
+            cursor: crosshair;
+        }
+        .control-panel {
+            flex: 1.2;
+            background: #1f232a;
+            border: 1px solid #3a3e48;
+            border-radius: 2px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+        .panel-title {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #ff5500;
+            border-left: 3px solid #ff5500;
+            padding-left: 12px;
+        }
+        .body-card {
+            background: #0f1117;
+            border: 1px solid #3a3e48;
+            border-radius: 2px;
+            padding: 16px;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-weight: bold;
+        }
+        .param-label {
+            font-size: 0.65rem;
+            color: #9ca3b5;
+            display: block;
+            margin-bottom: 4px;
+        }
+        select, input {
+            width: 100%;
+            background: #1a1e28;
+            border: 1px solid #3a3e48;
+            padding: 8px;
+            color: #eef2f8;
+            font-family: monospace;
+            font-size: 0.75rem;
+        }
+        .coord-group { display: flex; gap: 8px; }
+        .coord-group input { flex: 1; }
+        .angle-slider { display: flex; gap: 8px; align-items: center; }
+        .angle-slider input { flex: 1; }
+        .angle-value { width: 55px; text-align: center; background: #1a1e28; padding: 6px; }
+        button {
+            background: #0f1117;
+            border: 1px solid #3a3e48;
+            padding: 10px;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 0.7rem;
+            cursor: pointer;
+            color: #eef2f8;
+            text-transform: uppercase;
+        }
+        button.primary { border-left: 2px solid #ff5500; }
+        button.primary:hover { border-color: #ff5500; }
+        .result-area {
+            margin-top: 16px;
+            border-top: 1px solid #ff5500;
+            padding-top: 16px;
+            display: none;
+        }
+        .result-area.show { display: block; }
+        .volume { font-size: 1.2rem; color: #ff8c42; margin-bottom: 12px; }
+        .download-group { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+        .download-btn {
+            background: #1a1e28;
+            border: 1px solid #3a3e48;
+            padding: 8px 12px;
+            text-decoration: none;
+            color: #eef2f8;
+            font-size: 0.7rem;
+            display: inline-block;
+        }
+        .download-btn:hover { border-color: #ff5500; }
+        .loading {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .spinner {
+            width: 40px; height: 40px;
+            border: 3px solid #3a3e48;
+            border-top-color: #ff5500;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin: 0 auto 12px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+<div class="dashboard">
+    <div class="canvas-area">
+        <div class="canvas-container">
+            <canvas id="mainCanvas"></canvas>
+        </div>
+        <div style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.7rem;">
+            <span>🖱️ Перетащите тело за контур</span>
+            <span>📐 H=80 мм, D=40 мм | Масштаб: 3 px/мм</span>
+        </div>
+    </div>
+    <div class="control-panel">
+        <div class="panel-title">⚙ ТЕЛО A</div>
+        <div class="body-card">
+            <div class="card-header">
+                <span>🔴 ТЕЛО A</span>
+                <select id="typeA">
+                    <option value="sphere">Сфера (D=40)</option>
+                    <option value="cylinder" selected>Цилиндр (D=40, H=80)</option>
+                    <option value="cone">Конус (D=40, H=80)</option>
+                </select>
+            </div>
+            <div class="param-row">
+                <div class="param-label">Положение X, Z (мм)</div>
+                <div class="coord-group">
+                    <input type="number" id="posAX" value="0" step="5">
+                    <input type="number" id="posAZ" value="0" step="5">
+                </div>
+            </div>
+            <div class="param-row">
+                <div class="param-label">ПОВОРОТ (°)</div>
+                <div class="angle-slider">
+                    <input type="range" id="rotAZ" min="-180" max="180" value="0" step="1">
+                    <span class="angle-value" id="rotAZval">0°</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-title">⚙ ТЕЛО B</div>
+        <div class="body-card">
+            <div class="card-header">
+                <span>🔵 ТЕЛО B</span>
+                <select id="typeB">
+                    <option value="sphere">Сфера (D=40)</option>
+                    <option value="cylinder">Цилиндр (D=40, H=80)</option>
+                    <option value="cone" selected>Конус (D=40, H=80)</option>
+                </select>
+            </div>
+            <div class="param-row">
+                <div class="param-label">Положение X, Z (мм)</div>
+                <div class="coord-group">
+                    <input type="number" id="posBX" value="50" step="5">
+                    <input type="number" id="posBZ" value="0" step="5">
+                </div>
+            </div>
+            <div class="param-row">
+                <div class="param-label">ПОВОРОТ (°)</div>
+                <div class="angle-slider">
+                    <input type="range" id="rotBZ" min="-180" max="180" value="30" step="1">
+                    <span class="angle-value" id="rotBZval">30°</span>
+                </div>
+            </div>
+        </div>
+
+        <button id="swapBtn" class="primary">⇄ ПОМЕНЯТЬ ТЕЛА</button>
+        <button id="intersectBtn" class="primary">🧬 ВЫЧИСЛИТЬ ПЕРЕСЕЧЕНИЕ</button>
+
+        <div id="resultArea" class="result-area">
+            <div class="volume" id="volumeText"></div>
+            <div class="download-group" id="downloadLinks"></div>
+            <div id="resultMsg" style="font-size:0.7rem;"></div>
+        </div>
+    </div>
+</div>
+<div id="loadingOverlay" class="loading">
+    <div><div class="spinner"></div><div>Генерация...</div></div>
+</div>
+
+<script>
+    const PRIMITIVE_CONFIG = { sphere: { radius: 20 }, cylinder: { radius: 20, height: 80 }, cone: { radius: 20, height: 80 } };
+    const canvas = document.getElementById('mainCanvas');
+    let ctx, width, height;
+    const SCALE = 3;
+    
+    let bodies = {
+        A: { type: 'cylinder', x: 0, z: 0, rot: 0 },
+        B: { type: 'cone', x: 50, z: 0, rot: 30 }
+    };
+    
+    let dragTarget = null, dragStart = { x: 0, z: 0 }, dragStartMouse = { x: 0, y: 0 };
+    
+    const typeA = document.getElementById('typeA'), posAX = document.getElementById('posAX'), posAZ = document.getElementById('posAZ'), rotAZ = document.getElementById('rotAZ'), rotAZval = document.getElementById('rotAZval');
+    const typeB = document.getElementById('typeB'), posBX = document.getElementById('posBX'), posBZ = document.getElementById('posBZ'), rotBZ = document.getElementById('rotBZ'), rotBZval = document.getElementById('rotBZval');
+    const intersectBtn = document.getElementById('intersectBtn'), swapBtn = document.getElementById('swapBtn');
+    const resultArea = document.getElementById('resultArea'), volumeText = document.getElementById('volumeText'), downloadLinks = document.getElementById('downloadLinks'), resultMsg = document.getElementById('resultMsg'), loadingOverlay = document.getElementById('loadingOverlay');
+    
+    function worldToScreen(x, z) { return { x: width/2 + x*SCALE, y: height/2 - z*SCALE }; }
+    function screenToWorld(px, py) { return { x: (px - width/2)/SCALE, z: (height/2 - py)/SCALE }; }
+    
+    function drawGrid() {
+        const step = 20;
+        ctx.save();
+        ctx.strokeStyle = '#2a2c34';
+        ctx.lineWidth = 0.5;
+        for (let x = -200; x <= 200; x += step) { let p = worldToScreen(x, 0); ctx.beginPath(); ctx.moveTo(p.x, 0); ctx.lineTo(p.x, height); ctx.stroke(); }
+        for (let z = -200; z <= 200; z += step) { let p = worldToScreen(0, z); ctx.beginPath(); ctx.moveTo(0, p.y); ctx.lineTo(width, p.y); ctx.stroke(); }
+        let origin = worldToScreen(0, 0);
+        ctx.beginPath(); ctx.moveTo(0, origin.y); ctx.lineTo(width, origin.y); ctx.moveTo(origin.x, 0); ctx.lineTo(origin.x, height);
+        ctx.strokeStyle = '#ff5500'; ctx.lineWidth = 1.5; ctx.stroke();
+        ctx.restore();
+    }
+    
+    function rotatePoint(x, z, cx, cz, rotRad) {
+        const dx = x - cx, dz = z - cz;
+        const cos = Math.cos(rotRad), sin = Math.sin(rotRad);
+        return { x: cx + dx*cos - dz*sin, z: cz + dx*sin + dz*cos };
+    }
+    
+    function drawBody(body, color, isActive) {
+        const cfg = PRIMITIVE_CONFIG[body.type];
+        const cx = body.x, cz = body.z, rotRad = body.rot * Math.PI/180;
+        ctx.save();
+        if (isActive) { ctx.shadowBlur = 8; ctx.shadowColor = color; }
+        ctx.strokeStyle = color; ctx.fillStyle = color + '20'; ctx.lineWidth = 2.5;
+        
+        if (body.type === 'sphere') {
+            const r = cfg.radius;
+            const tl = worldToScreen(cx - r, cz + r), br = worldToScreen(cx + r, cz - r);
+            ctx.beginPath(); ctx.ellipse(tl.x + (br.x-tl.x)/2, tl.y + (br.y-tl.y)/2, (br.x-tl.x)/2, (br.y-tl.y)/2, 0, 0, 2*Math.PI); ctx.fill(); ctx.stroke();
+        } else if (body.type === 'cylinder') {
+            const r = cfg.radius, h = cfg.height;
+            const corners = [{x:cx-r,z:cz-h/2},{x:cx+r,z:cz-h/2},{x:cx+r,z:cz+h/2},{x:cx-r,z:cz+h/2}];
+            const rotated = corners.map(p => rotatePoint(p.x, p.z, cx, cz, rotRad));
+            const pts = rotated.map(p => worldToScreen(p.x, p.z));
+            ctx.beginPath(); ctx.moveTo(pts[0].x, pts[0].y);
+            for(let i=1;i<pts.length;i++) ctx.lineTo(pts[i].x, pts[i].y);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+        } else if (body.type === 'cone') {
+            const r = cfg.radius, h = cfg.height;
+            const tip = rotatePoint(cx, cz + h/2, cx, cz, rotRad);
+            const left = rotatePoint(cx - r, cz - h/2, cx, cz, rotRad);
+            const right = rotatePoint(cx + r, cz - h/2, cx, cz, rotRad);
+            const tipS = worldToScreen(tip.x, tip.z), leftS = worldToScreen(left.x, left.z), rightS = worldToScreen(right.x, right.z);
+            ctx.beginPath(); ctx.moveTo(tipS.x, tipS.y); ctx.lineTo(leftS.x, leftS.y); ctx.lineTo(rightS.x, rightS.y); ctx.closePath(); ctx.fill(); ctx.stroke();
+        }
+        ctx.restore();
+    }
+    
+    function drawCanvas() { ctx.clearRect(0, 0, width, height); drawGrid(); drawBody(bodies.A, '#ff8c42', dragTarget === 'A'); drawBody(bodies.B, '#42a5f5', dragTarget === 'B'); }
+    
+    function getBodyUnderCursor(mouseX, mouseY) {
+        const m = screenToWorld(mouseX, mouseY);
+        function test(body) {
+            const cfg = PRIMITIVE_CONFIG[body.type];
+            const r = cfg.radius, h = cfg.height, rotRad = body.rot * Math.PI/180;
+            const cos = Math.abs(Math.cos(rotRad)), sin = Math.abs(Math.sin(rotRad));
+            const halfW = Math.abs(r*cos + (h/2)*sin), halfH = Math.abs((h/2)*cos + r*sin);
+            return Math.abs(m.x - body.x) <= halfW && Math.abs(m.z - body.z) <= halfH;
+        }
+        if (test(bodies.A)) return 'A';
+        if (test(bodies.B)) return 'B';
+        return null;
+    }
+    
+    function onMouseDown(e) {
+        const rect = canvas.getBoundingClientRect();
+        const sx = canvas.width/rect.width, sy = canvas.height/rect.height;
+        const mx = (e.clientX - rect.left)*sx, my = (e.clientY - rect.top)*sy;
+        dragTarget = getBodyUnderCursor(mx, my);
+        if (dragTarget) {
+            dragStart = { x: bodies[dragTarget].x, z: bodies[dragTarget].z };
+            dragStartMouse = { x: mx, y: my };
+            canvas.style.cursor = 'grabbing';
+            e.preventDefault();
+        }
+    }
+    
+    function onMouseMove(e) {
+        if (!dragTarget) return;
+        const rect = canvas.getBoundingClientRect();
+        const sx = canvas.width/rect.width, sy = canvas.height/rect.height;
+        const mx = (e.clientX - rect.left)*sx, my = (e.clientY - rect.top)*sy;
+        const dx = (mx - dragStartMouse.x)/SCALE, dz = -(my - dragStartMouse.y)/SCALE;
+        bodies[dragTarget].x = dragStart.x + dx;
+        bodies[dragTarget].z = dragStart.z + dz;
+        if (dragTarget === 'A') { posAX.value = bodies.A.x; posAZ.value = bodies.A.z; }
+        else { posBX.value = bodies.B.x; posBZ.value = bodies.B.z; }
+        drawCanvas();
+    }
+    
+    function onMouseUp() { dragTarget = null; canvas.style.cursor = 'crosshair'; }
+    
+    function updateUI() {
+        typeA.value = bodies.A.type; posAX.value = bodies.A.x; posAZ.value = bodies.A.z; rotAZ.value = bodies.A.rot; rotAZval.innerText = bodies.A.rot + '°';
+        typeB.value = bodies.B.type; posBX.value = bodies.B.x; posBZ.value = bodies.B.z; rotBZ.value = bodies.B.rot; rotBZval.innerText = bodies.B.rot + '°';
+    }
+    
+    function updateBodies() {
+        bodies.A.type = typeA.value; bodies.A.x = parseFloat(posAX.value); bodies.A.z = parseFloat(posAZ.value); bodies.A.rot = parseFloat(rotAZ.value);
+        bodies.B.type = typeB.value; bodies.B.x = parseFloat(posBX.value); bodies.B.z = parseFloat(posBZ.value); bodies.B.rot = parseFloat(rotBZ.value);
+        drawCanvas();
+    }
+    
+    function swapBodies() { let t = JSON.parse(JSON.stringify(bodies.A)); bodies.A = JSON.parse(JSON.stringify(bodies.B)); bodies.B = t; updateUI(); drawCanvas(); }
+    
+    async function computeIntersection() {
+        updateBodies();
+        const body1 = { type: bodies.A.type, position: { x: bodies.A.x, y: 0, z: bodies.A.z }, rotation: { axis: "Y", angle_deg: bodies.A.rot } };
+        const body2 = { type: bodies.B.type, position: { x: bodies.B.x, y: 0, z: bodies.B.z }, rotation: { axis: "Y", angle_deg: bodies.B.rot } };
+        loadingOverlay.style.display = 'flex';
+        try {
+            const res = await fetch('/api/intersect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body1, body2 }) });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            if (data.success) {
+                volumeText.innerText = `📐 Объём пересечения: ${data.volume.toFixed(2)} мм³`;
+                let html = '';
+                if (data.downloads.step) html += `<a href="${data.downloads.step.url}" class="download-btn" download>📥 STEP</a>`;
+                if (data.downloads.stl) html += `<a href="${data.downloads.stl.url}" class="download-btn" download>📥 STL</a>`;
+                if (data.downloads.svg) {
+                    html += `<a href="${data.downloads.svg.front.url}" class="download-btn" download>📐 Вид спереди</a>`;
+                    html += `<a href="${data.downloads.svg.top.url}" class="download-btn" download>📐 Вид сверху</a>`;
+                    html += `<a href="${data.downloads.svg.left.url}" class="download-btn" download>📐 Вид слева</a>`;
+                }
+                downloadLinks.innerHTML = html;
+                resultMsg.innerText = '✅ Пересечение успешно вычислено.';
+                resultArea.classList.add('show');
+            } else throw new Error(data.error);
+        } catch(err) { resultMsg.innerText = `❌ Ошибка: ${err.message}`; resultArea.classList.add('show'); }
+        finally { loadingOverlay.style.display = 'none'; }
+    }
+    
+    function resize() { width = canvas.parentElement.clientWidth; height = canvas.parentElement.clientHeight; canvas.width = width; canvas.height = height; ctx = canvas.getContext('2d'); drawCanvas(); }
+    
+    window.addEventListener('resize', resize);
+    canvas.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+    typeA.addEventListener('change', updateBodies);
+    typeB.addEventListener('change', updateBodies);
+    posAX.addEventListener('input', updateBodies);
+    posAZ.addEventListener('input', updateBodies);
+    rotAZ.addEventListener('input', () => { rotAZval.innerText = rotAZ.value + '°'; updateBodies(); });
+    posBX.addEventListener('input', updateBodies);
+    posBZ.addEventListener('input', updateBodies);
+    rotBZ.addEventListener('input', () => { rotBZval.innerText = rotBZ.value + '°'; updateBodies(); });
+    swapBtn.addEventListener('click', swapBodies);
+    intersectBtn.addEventListener('click', computeIntersection);
+    
+    resize();
+    updateUI();
+    drawCanvas();
+</script>
+</body>
+</html>

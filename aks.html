@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>IndF · AXON_BUILDER</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --metal-base: #171a1f;
+            --metal-panel: #1f232a;
+            --metal-canvas: #1e2129;
+            --metal-border: #3a3e48;
+            --text-primary: #eef2f8;
+            --text-secondary: #9ca3b5;
+           
+            --orange-pulse: #ff6600;     /* ← ярче */
+            --orange-active: #ff5500;
+            --orange-glow: #ff8800;      /* ← ярче и шире */
+            --orange-preview: #ffaa44;
+           
+            --cyan-system: #00a6c4;
+            --success: #4caf50;
+            --error: #ff5e5e;
+        }
+
+        body {
+            background-color: var(--metal-base);
+            background-image: repeating-linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.02) 0px,
+                rgba(255, 255, 255, 0.02) 1px,
+                transparent 1px,
+                transparent 12px
+            );
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 28px;
+        }
+
+        .workspace {
+            background: var(--metal-panel);
+            border: 1px solid var(--metal-border);
+            border-radius: 2px;
+            box-shadow: inset 0 0 0 1px rgba(255,85,0,0.1), 0 8px 20px rgba(0,0,0,0.5);
+            padding: 22px 26px 26px;
+            max-width: 1180px;
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* ЯРКАЯ СТАТИЧНАЯ ОРАНЖЕВАЯ ОБВОДКА ВОКРУГ ВСЕЙ ЗОНЫ */
+        .workspace::before {
+            content: "";
+            position: absolute;
+            inset: -4px;
+            border: 3px solid var(--orange-pulse);
+            border-radius: 6px;
+            pointer-events: none;
+            box-shadow: 
+                0 0 0 5px var(--orange-glow),
+                0 0 25px 6px rgba(255, 102, 0, 0.45),   /* более яркое свечение */
+                inset 0 0 15px rgba(255, 102, 0, 0.15);
+            z-index: 1;
+            opacity: 0.95;
+        }
+
+        .control-panel {
+            background: rgba(12, 14, 19, 0.82);
+            border: 1px solid var(--metal-border);
+            padding: 18px 20px;
+            margin-bottom: 24px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            gap: 18px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .control-panel::after {
+            content: "";
+            position: absolute;
+            bottom: -1px;
+            left: 8px;
+            width: 64px;
+            height: 2px;
+            background: var(--orange-active);
+            opacity: 0.6;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 2;
+            min-width: 260px;
+        }
+        .input-group label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .coord-input {
+            background: #0c0f14;
+            border: 1px solid var(--metal-border);
+            padding: 10px 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-primary);
+            border-radius: 2px;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+        }
+        .coord-input:focus {
+            outline: none;
+            border-color: var(--orange-active);
+            box-shadow: 0 0 0 1px rgba(255,85,0,0.35), inset 0 1px 2px black;
+        }
+
+        .btn {
+            background: var(--metal-panel);
+            border: 1px solid var(--metal-border);
+            color: var(--text-primary);
+            padding: 10px 22px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-radius: 2px;
+            cursor: pointer;
+            transition: all 0.08s linear;
+        }
+        .btn:hover {
+            transform: translateY(1px);
+            border-color: var(--orange-active);
+            box-shadow: 0 2px 12px rgba(255,85,0,0.5);
+            color: var(--orange-pulse);
+        }
+        .btn-clear:hover {
+            border-color: var(--error);
+            box-shadow: 0 2px 8px rgba(255,94,94,0.3);
+            color: var(--error);
+        }
+
+        .canvas-zone {
+            margin: 18px 0 14px;
+            position: relative;
+            padding: 2px;
+            background: transparent;
+            border: none;
+            z-index: 2;
+        }
+
+        canvas {
+            display: block;
+            background: var(--metal-canvas);
+            background-image: radial-gradient(circle at 30% 40%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.25) 100%);
+            border: 1px solid var(--metal-border);
+            border-radius: 2px;
+            cursor: crosshair;
+            width: 100%;
+            height: auto;
+            box-shadow: inset 0 0 0 1px rgba(0,0,0,0.6);
+        }
+
+        .power-flash {
+            animation: powerFlash 0.28s cubic-bezier(0.25, 0.9, 0.4, 1.1);
+        }
+        @keyframes powerFlash {
+            0%   { box-shadow: 0 0 0 0 var(--orange-pulse), 0 0 0 4px var(--orange-glow); }
+            65%  { box-shadow: 0 0 0 26px rgba(255,102,0,0.18), 0 0 0 4px var(--orange-glow); }
+            100% { box-shadow: 0 0 0 0 rgba(255,102,0,0), 0 0 0 4px var(--orange-glow); }
+        }
+
+        .telemetry-bar {
+            background: #0f1117;
+            border-top: 1px solid var(--orange-glow);
+            padding: 10px 16px;
+            margin-top: 22px;
+            display: flex;
+            gap: 32px;
+            flex-wrap: wrap;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 0.2px;
+            z-index: 2;
+            position: relative;
+        }
+
+        .telemetry-unit { display: flex; gap: 8px; align-items: baseline; }
+        .telemetry-prefix { font-weight: 700; color: var(--cyan-system); }
+        .telemetry-prefix.ok { color: var(--success); }
+        .telemetry-prefix.err { color: var(--error); }
+        .telemetry-value { color: var(--orange-preview); font-weight: 500; }
+
+        .sys-glow {
+            height: 1px;
+            background: linear-gradient(90deg, var(--orange-glow), transparent);
+            width: 100%;
+            margin-top: 6px;
+            opacity: 0.65;
+            z-index: 2;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+<div class="workspace" id="workspace">
+    <div class="control-panel">
+        <div class="input-group">
+            <label>▼ КООРДИНАТЫ [X1 Y1 Z1 X2 Y2 Z2]</label>
+            <input type="text" id="coordInput" class="coord-input"
+                   placeholder="0 0 0 4 2 3 или 2,1,0 5,3,2" autocomplete="off" spellcheck="false">
+        </div>
+        <button class="btn" id="addBtn">+ ДОБАВИТЬ</button>
+        <button class="btn btn-clear" id="clearBtn">✕ ОЧИСТИТЬ</button>
+    </div>
+
+    <div class="canvas-zone" id="canvasZone">
+        <canvas id="axCanvas" width="950" height="580" style="width:100%; height:auto; max-width:950px; aspect-ratio:950/580" tabindex="0"></canvas>
+    </div>
+
+    <div class="telemetry-bar">
+        <div class="telemetry-unit">
+            <span class="telemetry-prefix" id="statusPrefix">[IDLE]</span>
+            <span class="telemetry-message" id="statusMsg">ГОТОВ</span>
+        </div>
+        <div class="telemetry-unit">
+            <span class="telemetry-prefix">[COUNT]</span>
+            <span class="telemetry-value" id="objCount">0</span>
+            <span class="telemetry-message">SEG</span>
+        </div>
+        <div class="telemetry-unit">
+            <span class="telemetry-prefix">[LAST]</span>
+            <span class="telemetry-value" id="lastCoord">—</span>
+        </div>
+    </div>
+    <div class="sys-glow"></div>
+</div>
+
+<script>
+    (function() {
+        const canvas = document.getElementById("axCanvas");
+        const ctx = canvas.getContext("2d");
+        const canvasZone = document.getElementById("canvasZone");
+
+        const width = 950;
+        const height = 580;
+        canvas.width = width;
+        canvas.height = height;
+
+        let scale = 44;
+        let offsetX = width / 2 + 24;
+        let offsetY = height / 2 + 60;
+
+        let segments = [];
+
+        function project(x, y, z) {
+            const skewX = (x - y) * 0.78;
+            const skewY = -(x + y) * 0.52 + z * 0.96;
+            return { X: skewX, Y: skewY };
+        }
+
+        function drawArrowHead(fromX, fromY, toX, toY, color, size = 12) {
+            const angle = Math.atan2(toY - fromY, toX - fromX);
+            const headlen = size;
+            const leftAngle  = angle - Math.PI / 6.8;
+            const rightAngle = angle + Math.PI / 6.8;
+
+            ctx.save();
+            ctx.fillStyle = color;
+            ctx.strokeStyle = "#ffffff30";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(toX, toY);
+            ctx.lineTo(toX - headlen * Math.cos(leftAngle),  toY - headlen * Math.sin(leftAngle));
+            ctx.lineTo(toX - headlen * Math.cos(rightAngle), toY - headlen * Math.sin(rightAngle));
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        function drawGridAndAxes() {
+            ctx.save();
+            ctx.strokeStyle = "#323844";
+            ctx.lineWidth = 0.7;
+
+            const gridRange = [-6,-5,-4,-3,-2,-1,0,1,2,3,4,5,6];
+            for (let i of gridRange) {
+                const p1 = project(i, -6, 0);
+                const p2 = project(i, 6, 0);
+                ctx.beginPath();
+                ctx.moveTo(offsetX + p1.X * scale, offsetY - p1.Y * scale);
+                ctx.lineTo(offsetX + p2.X * scale, offsetY - p2.Y * scale);
+                ctx.stroke();
+
+                const q1 = project(-6, i, 0);
+                const q2 = project(6, i, 0);
+                ctx.beginPath();
+                ctx.moveTo(offsetX + q1.X * scale, offsetY - q1.Y * scale);
+                ctx.lineTo(offsetX + q2.X * scale, offsetY - q2.Y * scale);
+                ctx.stroke();
+            }
+
+            const O = project(0, 0, 0);
+            const Xend = project(7.2, 0, 0);
+            const Yend = project(0, 7.2, 0);
+            const Zend = project(0, 0, 6.8);
+
+            const from = { x: offsetX + O.X * scale, y: offsetY - O.Y * scale };
+
+            const xTo = { x: offsetX + Xend.X * scale, y: offsetY - Xend.Y * scale };
+            ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(xTo.x, xTo.y);
+            ctx.strokeStyle = "#ff5500"; ctx.lineWidth = 3; ctx.shadowBlur = 5; ctx.shadowColor = "#ff5500";
+            ctx.stroke();
+            drawArrowHead(from.x, from.y, xTo.x, xTo.y, "#ff5500");
+
+            const yTo = { x: offsetX + Yend.X * scale, y: offsetY - Yend.Y * scale };
+            ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(yTo.x, yTo.y);
+            ctx.strokeStyle = "#2a9d8f"; ctx.lineWidth = 2.8; ctx.shadowColor = "#2a9d8f";
+            ctx.stroke();
+            drawArrowHead(from.x, from.y, yTo.x, yTo.y, "#2a9d8f");
+
+            const zTo = { x: offsetX + Zend.X * scale, y: offsetY - Zend.Y * scale };
+            ctx.beginPath(); ctx.moveTo(from.x, from.y); ctx.lineTo(zTo.x, zTo.y);
+            ctx.strokeStyle = "#00a6c4"; ctx.lineWidth = 3; ctx.shadowColor = "#00a6c4";
+            ctx.stroke();
+            drawArrowHead(from.x, from.y, zTo.x, zTo.y, "#00a6c4");
+
+            ctx.shadowBlur = 0;
+
+            ctx.font = "500 15px 'JetBrains Mono', monospace";
+            ctx.fillStyle = "#ff8c42"; ctx.fillText("X", xTo.x - 18, xTo.y + 12);
+            ctx.fillStyle = "#2a9d8f"; ctx.fillText("Y", yTo.x + 12, yTo.y + 16);
+            ctx.fillStyle = "#00a6c4"; ctx.fillText("Z", zTo.x - 12, zTo.y - 12);
+
+            ctx.fillStyle = "#9ca3b5";
+            ctx.font = "10px 'JetBrains Mono'";
+            for (let i = 1; i <= 6; i++) {
+                const xMark = project(i, 0, 0);
+                ctx.fillText(i.toString(), offsetX + xMark.X * scale - 6, offsetY - xMark.Y * scale + 5);
+                const yMark = project(0, i, 0);
+                ctx.fillText(i.toString(), offsetX + yMark.X * scale + 4, offsetY - yMark.Y * scale + 3);
+                if (i <= 5) {
+                    const zMark = project(0, 0, i);
+                    ctx.fillText(i.toString(), offsetX + zMark.X * scale - 12, offsetY - zMark.Y * scale - 3);
+                }
+            }
+            ctx.restore();
+        }
+
+        function drawSegment(seg) {
+            const [x1,y1,z1,x2,y2,z2] = seg;
+            const p1 = project(x1, y1, z1);
+            const p2 = project(x2, y2, z2);
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(offsetX + p1.X * scale, offsetY - p1.Y * scale);
+            ctx.lineTo(offsetX + p2.X * scale, offsetY - p2.Y * scale);
+            ctx.strokeStyle = "#ff5500";
+            ctx.lineWidth = 3.2;
+            ctx.shadowBlur = 5;
+            ctx.shadowColor = "#ff5500";
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(offsetX + p1.X * scale, offsetY - p1.Y * scale);
+            ctx.lineTo(offsetX + p2.X * scale, offsetY - p2.Y * scale);
+            ctx.strokeStyle = "#ff8c42";
+            ctx.lineWidth = 1.5;
+            ctx.shadowBlur = 6;
+            ctx.stroke();
+
+            ctx.fillStyle = "#ff5500";
+            ctx.shadowBlur = 4;
+            ctx.beginPath(); ctx.arc(offsetX + p1.X * scale, offsetY - p1.Y * scale, 4.5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(offsetX + p2.X * scale, offsetY - p2.Y * scale, 4.5, 0, Math.PI*2); ctx.fill();
+
+            ctx.fillStyle = "#1e2129";
+            ctx.beginPath(); ctx.arc(offsetX + p1.X * scale, offsetY - p1.Y * scale, 2.2, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(offsetX + p2.X * scale, offsetY - p2.Y * scale, 2.2, 0, Math.PI*2); ctx.fill();
+            ctx.restore();
+        }
+
+        function render() {
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = "#1e2129";
+            ctx.fillRect(0, 0, width, height);
+            drawGridAndAxes();
+            segments.forEach(drawSegment);
+            document.getElementById("objCount").innerText = segments.length;
+        }
+
+        function setTelemetry(prefixCode, message, isError = false) {
+            const prefix = document.getElementById("statusPrefix");
+            const msg = document.getElementById("statusMsg");
+            prefix.innerText = prefixCode;
+            prefix.className = isError ? "telemetry-prefix err" : "telemetry-prefix ok";
+            msg.innerText = message.toUpperCase();
+        }
+
+        function triggerPowerFlash() {
+            canvasZone.classList.add("power-flash");
+            setTimeout(() => canvasZone.classList.remove("power-flash"), 280);
+        }
+
+        function addSegmentFromInput() {
+            const raw = document.getElementById("coordInput").value.trim();
+            if (!raw) {
+                setTelemetry("[ERR]", "ВВЕДИТЕ 6 КООРДИНАТ", true);
+                triggerPowerFlash();
+                return;
+            }
+            let numbers = [];
+            const parts = raw.split(/[\s,]+/);
+            for (let p of parts) {
+                if (!p) continue;
+                let num = parseFloat(p);
+                if (isNaN(num)) {
+                    setTelemetry("[ERR]", "НЕВЕРНЫЙ ФОРМАТ", true);
+                    triggerPowerFlash();
+                    return;
+                }
+                numbers.push(num);
+            }
+            if (numbers.length !== 6) {
+                setTelemetry("[ERR]", "ТРЕБУЕТСЯ 6 ЧИСЕЛ", true);
+                triggerPowerFlash();
+                return;
+            }
+
+            segments.push(numbers);
+            render();
+
+            const last = segments[segments.length-1];
+            document.getElementById("lastCoord").innerHTML = `[${last[0]},${last[1]},${last[2]}] → [${last[3]},${last[4]},${last[5]}]`;
+
+            setTelemetry("[OK]", "ОТРЕЗОК ДОБАВЛЕН");
+            triggerPowerFlash();
+            if (navigator.vibrate) navigator.vibrate(45);
+            document.getElementById("coordInput").value = "";
+        }
+
+        function clearSegments() {
+            if (segments.length === 0) {
+                setTelemetry("[IDLE]", "НЕТ ОБЪЕКТОВ");
+                triggerPowerFlash();
+                return;
+            }
+            segments = [];
+            render();
+            document.getElementById("lastCoord").innerHTML = "—";
+            setTelemetry("[OK]", "ВСЕ ОБЪЕКТЫ ОЧИЩЕНЫ");
+            triggerPowerFlash();
+        }
+
+        document.getElementById("addBtn").addEventListener("click", addSegmentFromInput);
+        document.getElementById("clearBtn").addEventListener("click", clearSegments);
+        document.getElementById("coordInput").addEventListener("keypress", e => {
+            if (e.key === "Enter") addSegmentFromInput();
+        });
+
+        render();
+        setTelemetry("[IDLE]", "ГОТОВ");
+        setTimeout(() => triggerPowerFlash(), 180);
+
+    })();
+</script>
+</body>
+</html>
