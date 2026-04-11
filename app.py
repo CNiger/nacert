@@ -17,13 +17,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Монтируем модули
+# Монтируем модули по префиксам
 app.mount("/rot_cut", rot_cut_app)
 app.mount("/pol_cut", pol_cut_app)
 app.mount("/sek", sek_app)
 app.mount("/ras", ras_app)
 
-# Главная страница и отдельные инструменты
+# Отдельные статические HTML-страницы
 @app.get("/")
 async def root():
     return FileResponse("start.html")
