@@ -418,7 +418,7 @@ def health():
     }
 
 
-app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="static")
+
 
 if __name__ == "__main__":
     import uvicorn
