@@ -4,6 +4,10 @@ from fastapi.responses import FileResponse
 import logging
 import traceback
 
+print("=== ПЫТАЮСЬ ИМПОРТИРОВАТЬ rot_cut ===")
+from rot_cut.main import app as rot_cut_app
+print("=== rot_cut ИМПОРТИРОВАН УСПЕШНО ===")
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
