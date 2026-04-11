@@ -235,7 +235,7 @@ def download_svg(filename: str):
 def health():
     return {"status": "ok", "cadquery": cq.__version__}
 
-
+app.mount("/", StaticFiles(directory="static", html=True))
 
 if __name__ == "__main__":
     import uvicorn
