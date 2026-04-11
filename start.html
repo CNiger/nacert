@@ -35,7 +35,6 @@
 
         body {
             background-color: var(--metal-base);
-            /* brushed metal texture */
             background-image: repeating-linear-gradient(
                 45deg,
                 rgba(255, 255, 255, 0.02) 0px,
@@ -58,7 +57,6 @@
             flex: 1;
         }
 
-        /* Typography */
         h1 {
             font-family: 'Major Mono Display', monospace;
             font-weight: 400;
@@ -85,7 +83,6 @@
             letter-spacing: 0.3px;
         }
 
-        /* Energy signal canvas (minimal oscilloscope) */
         .signal-canvas {
             width: 100%;
             height: 56px;
@@ -95,7 +92,6 @@
             border-radius: 2px;
         }
 
-        /* Tools grid - FULL WIDTH with larger cards */
         .tools-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
@@ -118,7 +114,6 @@
             position: relative;
             box-shadow: inset 0 0 0 1px rgba(255,85,0,0.02), 0 6px 14px rgba(0,0,0,0.4);
         }
-        /* welded double border effect */
         .tool-card::before {
             content: '';
             position: absolute;
@@ -151,7 +146,6 @@
             text-shadow: 0 0 6px rgba(255,85,0,0.5);
             transform: scale(1.02);
         }
-        /* специальный стиль для математического символа пересечения */
         .math-intersection {
             font-family: 'JetBrains Mono', monospace;
             font-weight: 700;
@@ -185,7 +179,6 @@
             letter-spacing: 0.3px;
         }
 
-        /* Telemetry line - minimal status */
         .telemetry {
             background: #0f1117;
             border-top: 2px solid var(--orange-pulse);
@@ -216,7 +209,6 @@
             font-weight: 500;
         }
 
-        /* Power flash animation */
         @keyframes powerFlash {
             0% { box-shadow: 0 0 0 0 var(--orange-pulse), inset 0 0 0 1px rgba(255,85,0,0.9); border-color: var(--orange-pulse); }
             70% { box-shadow: 0 0 0 16px rgba(255,85,0,0), inset 0 0 0 3px rgba(255,85,0,0.2); border-color: var(--orange-pulse); }
@@ -231,7 +223,6 @@
             outline-offset: 3px;
         }
 
-        /* Responsive: on smaller screens cards still big enough */
         @media (max-width: 800px) {
             .main-container { padding: 1.2rem; }
             h1 { font-size: 1.8rem; }
@@ -259,7 +250,6 @@
 </head>
 <body>
 <div class="main-container">
-    <!-- Minimal header: no extra banners or verbose status -->
     <div>
         <h1>
             <i class="fas fa-cogs" style="color: #ff5500; font-size: 1.8rem;"></i>
@@ -270,27 +260,25 @@
         </div>
     </div>
 
-    <!-- Compact energy signal (no labels) -->
     <canvas id="energyCanvas" class="signal-canvas" width="1000" height="56" style="width:100%; height:56px"></canvas>
 
-    <!-- 8 core tools - expanded layout, corrected intersection icon with math symbol ∩ -->
     <div class="tools-grid" id="toolsGrid">
         <a href="/rot_cut" class="tool-card" data-tool="VYREZY_TEL_VRASCHENIYA" data-name="Вырезы на телах вращения">
             <div class="tool-icon"><i class="fas fa-circle-notch"></i></div>
             <div class="tool-title">ВЫРЕЗЫ НА ТЕЛАХ ВРАЩЕНИЯ</div>
-            <div class="tool-desc">Сечения, пазы, сложная геометрия цилиндров, конусов и сфер.</div>
+            <div class="tool-desc">Сечения, пазы, сложная геометрия цилиндров, конусов и сфер. Построение разрезов и параметрические вырезы.</div>
             <div class="tool-tag"><i class="fas fa-sync-alt"></i> ротационный конструктор</div>
         </a>
         <a href="/pol_cut" class="tool-card" data-tool="VYREZY_MNOGOGRAINIKI" data-name="Вырезы на многогранниках">
             <div class="tool-icon"><i class="fas fa-cube"></i></div>
             <div class="tool-title">ВЫРЕЗЫ НА МНОГОГРАННИКАХ</div>
-            <div class="tool-desc">Призмы, пирамиды, платоновы тела. Динамическое удаление частей.</div>
+            <div class="tool-desc">Призмы, пирамиды, платоновы тела. Динамическое удаление частей и развёртки сложных полиэдров.</div>
             <div class="tool-tag"><i class="fas fa-shapes"></i> полиэдральный модуль</div>
         </a>
         <a href="/axon" class="tool-card" data-tool="AKSONOMETRIYA" data-name="Аксонометрия">
             <div class="tool-icon"><i class="fas fa-draw-polygon"></i></div>
             <div class="tool-title">АКСОНОМЕТРИЯ</div>
-            <div class="tool-desc">Изометрическая, диметрическая проекции с направляющими.</div>
+            <div class="tool-desc">Изометрическая, диметрическая проекции с направляющими. Вращение сцены и точная настройка углов.</div>
             <div class="tool-tag"><i class="fas fa-arrows-alt"></i> 3D проекции</div>
         </a>
         <a href="/epure" class="tool-card" data-tool="EPUR_MONGE" data-name="Эпюр Монжа интерактивный">
@@ -300,33 +288,34 @@
             <div class="tool-tag"><i class="fas fa-project-diagram"></i> начертательная геометрия</div>
         </a>
         <a href="/sek" class="tool-card" data-tool="PERESECHENIYA" data-name="Пересечения">
-            <div class="tool-icon"><span class="math-intersection">∩</span></div>
+            <div class="tool-icon">
+                <span class="math-intersection">∩</span>
+            </div>
             <div class="tool-title">ПЕРЕСЕЧЕНИЯ</div>
-            <div class="tool-desc">Линии пересечения многогранников и поверхностей.</div>
+            <div class="tool-desc">Линии пересечения многогранников и поверхностей. Метод секущих плоскостей и точные алгоритмы.</div>
             <div class="tool-tag"><i class="fas fa-chart-line"></i> кривые перехода</div>
         </a>
         <a href="/ras" class="tool-card" data-tool="RAZVERTKI" data-name="Развёртки">
             <div class="tool-icon"><i class="fas fa-layer-group"></i></div>
             <div class="tool-title">РАЗВЁРТКИ</div>
-            <div class="tool-desc">Плоские развёртки призм, цилиндров, конусов и составных тел.</div>
+            <div class="tool-desc">Плоские развёртки призм, цилиндров, конусов и составных тел с припусками на стыковку.</div>
             <div class="tool-tag"><i class="fas fa-ruler-combined"></i> листовой металл / net</div>
         </a>
         <a href="#" class="tool-card" data-tool="LEKCII" data-name="Лекции">
             <div class="tool-icon"><i class="fas fa-microphone-alt"></i></div>
             <div class="tool-title">ЛЕКЦИИ</div>
-            <div class="tool-desc">Видео-лекции, методические материалы по инженерной графике.</div>
+            <div class="tool-desc">Видео-лекции, методические материалы по инженерной графике и параметрическому моделированию.</div>
             <div class="tool-tag"><i class="fas fa-graduation-cap"></i> технологический курс</div>
         </a>
         <a href="#" class="tool-card" data-tool="GUIDE" data-name="Гайд">
             <div class="tool-icon"><i class="fas fa-map-signs"></i></div>
             <div class="tool-title">ГАЙД</div>
-            <div class="tool-desc">Быстрый старт, навигация, горячие клавиши и эффективное моделирование.</div>
+            <div class="tool-desc">Быстрый старт, навигация, горячие клавиши и эффективное моделирование в среде IndF.</div>
             <div class="tool-tag"><i class="fas fa-book-open"></i> система поддержки</div>
         </a>
     </div>
 </div>
 
-<!-- Telemetry line: clean status, no extra "protocols" -->
 <div class="telemetry" id="telemetryBar">
     <div class="telemetry-message-area">
         <span class="telemetry-prefix" id="telemetryPrefix">[OK]</span>
@@ -339,7 +328,7 @@
 
 <script>
     (function() {
-        // Energy canvas (minimal oscilloscope, no text labels) — enhanced for bigger canvas
+        // Energy canvas (минимальный осциллограф)
         const canvas = document.getElementById('energyCanvas');
         if (canvas) {
             let ctx = canvas.getContext('2d');
@@ -362,7 +351,6 @@
                 ctx.fillStyle = '#0c0f14';
                 ctx.fillRect(0, 0, width, height);
 
-                // Enhanced grid lines (subtle but industrial)
                 ctx.beginPath();
                 ctx.strokeStyle = '#3a3e48';
                 ctx.lineWidth = 0.6;
@@ -372,7 +360,6 @@
                     ctx.lineTo(width, y);
                     ctx.stroke();
                 }
-                // faint vertical markers
                 ctx.beginPath();
                 ctx.strokeStyle = '#2f3540';
                 ctx.lineWidth = 0.3;
@@ -387,7 +374,6 @@
                 const amp = height * 0.32;
                 const step = Math.max(2, width / 85);
                 
-                // primary orange discharge wave (energetic)
                 ctx.beginPath();
                 for (let i = 0; i <= width; i += step) {
                     let t = (i / width) * Math.PI * 7 + phase;
@@ -402,7 +388,6 @@
                 ctx.shadowColor = '#ff5500';
                 ctx.stroke();
 
-                // cyan system layer (data carrier)
                 ctx.beginPath();
                 for (let i = 0; i <= width; i += step) {
                     let t = (i / width) * Math.PI * 6 + phase + 1.5;
@@ -417,7 +402,6 @@
                 ctx.shadowColor = '#00a6c4';
                 ctx.stroke();
                 
-                // add small 'glitch' pulses randomly? minimal.
                 ctx.shadowBlur = 0;
             }
 
@@ -448,7 +432,7 @@
             }
         }
 
-        // Telemetry update logic (industrial style)
+        // Telemetry (только визуальная обратная связь, без блокировки переходов)
         const telemetryPrefixSpan = document.getElementById('telemetryPrefix');
         const telemetryMsgSpan = document.getElementById('telemetryMessage');
 
@@ -480,44 +464,38 @@
 
         cards.forEach(card => {
             const toolName = card.getAttribute('data-name') || card.querySelector('.tool-title')?.innerText || 'инструмент';
+            const href = card.getAttribute('href');
+            
             card.addEventListener('mouseenter', () => {
                 if (hoverTimeout) clearTimeout(hoverTimeout);
                 setTelemetry('PRV', `${toolName} | подготовлен к активации`, 'info');
             });
+            
             card.addEventListener('mouseleave', () => {
                 hoverTimeout = setTimeout(() => {
                     setTelemetry('OK', 'система ожидает команду · полная готовность', 'success');
                 }, 200);
             });
+            
+            // Клик: визуальный фидбек + переход (если href не #)
             card.addEventListener('click', (e) => {
-                e.preventDefault();
-                addPowerFlash(card);
-                if (navigator.vibrate) navigator.vibrate(40);
-                setTelemetry('RUN', `запуск модуля: ${toolName}`, 'info');
-                // subtle grid feedback (full width scale effect)
-                const grid = document.querySelector('.tools-grid');
-                if (grid) {
-                    grid.style.transition = '0.08s cubic-bezier(0.2, 0.9, 0.4, 1.1)';
-                    grid.style.transform = 'scale(0.99)';
-                    setTimeout(() => { grid.style.transform = ''; }, 120);
+                if (!href || href === '#') {
+                    e.preventDefault();
+                    addPowerFlash(card);
+                    setTelemetry('RUN', `${toolName} → в разработке`, 'warning');
+                    if (navigator.vibrate) navigator.vibrate(40);
+                } else {
+                    // Добавляем визуальный эффект, но не блокируем переход
+                    addPowerFlash(card);
+                    setTelemetry('RUN', `запуск модуля: ${toolName}`, 'info');
+                    if (navigator.vibrate) navigator.vibrate(40);
+                    // Не вызываем preventDefault() – браузер сам перейдёт по ссылке
                 }
-                // simulate module activation, keep telemetry coherent
-                setTimeout(() => {
-                    if (!document.querySelector('.tool-card:hover')) {
-                        setTelemetry('OK', `${toolName} активирован · интерфейс загружен`, 'success');
-                    } else {
-                        setTelemetry('ACT', `${toolName} → активная сессия`, 'success');
-                    }
-                }, 750);
-                console.log(`[IndF Workbench] запущен инструмент: ${toolName}`);
-                // optional: show additional runtime feedback
             });
         });
 
-        // initial telemetry after full page load
         setTelemetry('OK', 'система готова · полноразмерные карточки', 'success');
         
-        // дополнительная адаптация под ширину: гарантия, что сетка всегда заполняет пространство
         function adjustGridFullness() {
             const grid = document.querySelector('.tools-grid');
             if (grid) {
