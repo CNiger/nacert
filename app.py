@@ -9,6 +9,13 @@ from typing import List, Tuple
 
 import cadquery as cq
 
+print("1. Начинаю импорт rot_cut")
+from rot_cut.main import app as rot_cut_app
+print("2. rot_cut импортирован")
+from pol_cut.main import app as pol_cut_app
+print("3. pol_cut импортирован")
+
+
 app = FastAPI(title="IndF Workbench", version="5.0.0")
 app.add_middleware(
     CORSMiddleware,
