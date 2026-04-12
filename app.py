@@ -2,14 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 
-# Импортируем все приложения
-from rot_cut.main import app as rot_app
-from pol_cut.main import app as pol_app
+# Импортируем все сервисы из папок
+from rot_cut.main import app as rot_cut_app
+from pol_cut.main import app as pol_cut_app
 from sek.main import app as sek_app
 from ras.main import app as ras_app
-
-# Твои старые импорты (если они ещё нужны)
-from main import app as cut_app   # если этот cut_app уже один из перечисленных – убери дубликат
 
 app = FastAPI(title="CAD Tools Suite")
 app.add_middleware(
@@ -19,17 +16,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Монтируем все сервисы
-app.mount("/cut", rot_app)    # вырезы тел вращения
-app.mount("/pol", pol_app)    # многогранники
-app.mount("/sek", sek_app)    # пересечения
-app.mount("/ras", ras_app)    # развёртки
+# Монтируем сервисы - путь РАВЕН имени папки
+app.mount("/rot_cut", rot_cut_app)   # папка rot_cut → путь /rot_cut
+app.mount("/pol_cut", pol_cut_app)   # папка pol_cut → путь /pol_cut
+app.mount("/sek", sek_app)           # папка sek → путь /sek
+app.mount("/ras", ras_app)           # папка ras → путь /ras
 
-# Если у тебя остался старый cut_app, который не вошёл в список – замонтируй его куда-то ещё
-# Например, если он нужен отдельно:
-# app.mount("/old_cut", cut_app)
-
-# Стартовая страница и другие статические HTML
+# Статические страницы
 @app.get("/")
 def start():
     return FileResponse("start.html")
