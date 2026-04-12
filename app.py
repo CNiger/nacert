@@ -1,11 +1,17 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-import sys
 
-print("=== STARTING APP.PY ===", file=sys.stderr)
+# Импортируем все приложения
+from rot_cut.main import app as rot_app
+from pol_cut.main import app as pol_app
+from sek.main import app as sek_app
+from ras.main import app as ras_app
 
-app = FastAPI(title="IndF Workbench", version="4.0.0")
+# Твои старые импорты (если они ещё нужны)
+from main import app as cut_app   # если этот cut_app уже один из перечисленных – убери дубликат
+
+app = FastAPI(title="CAD Tools Suite")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -13,35 +19,28 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Монтируем подприложения
-try:
-    print("Importing rot_cut...", file=sys.stderr)
-    from rot_cut.main import app as rot_cut_app
-    app.mount("/rot_cut", rot_cut_app)
-    print("rot_cut mounted OK", file=sys.stderr)
-except Exception as e:
-    print(f"rot_cut FAILED: {e}", file=sys.stderr)
+# Монтируем все сервисы
+app.mount("/cut", rot_app)    # вырезы тел вращения
+app.mount("/pol", pol_app)    # многогранники
+app.mount("/sek", sek_app)    # пересечения
+app.mount("/ras", ras_app)    # развёртки
 
-try:
-    print("Importing pol_cut...", file=sys.stderr)
-    from pol_cut.main import app as pol_cut_app
-    app.mount("/pol_cut", pol_cut_app)
-    print("pol_cut mounted OK", file=sys.stderr)
-except Exception as e:
-    print(f"pol_cut FAILED: {e}", file=sys.stderr)
+# Если у тебя остался старый cut_app, который не вошёл в список – замонтируй его куда-то ещё
+# Например, если он нужен отдельно:
+# app.mount("/old_cut", cut_app)
 
-# Отдельные HTML-страницы
+# Стартовая страница и другие статические HTML
 @app.get("/")
-async def root():
+def start():
     return FileResponse("start.html")
 
 @app.get("/epure")
-async def epure():
+def epure():
     return FileResponse("alp.html")
 
-@app.get("/axon")
-async def axon():
-    return FileResponse("aks.html")
+@app.get("/ask")
+def ask():
+    return FileResponse("ask.html")
 
 if __name__ == "__main__":
     import uvicorn
