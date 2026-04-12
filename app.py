@@ -68,6 +68,17 @@ import os
 def debug_files():
     return {"files": os.listdir(".")}
 
+# В самом начале вашего main файла
+import os
+
+print("=== ФАЙЛЫ В КОРНЕ ПРИЛОЖЕНИЯ ===")
+for file in os.listdir('.'):
+    size = os.path.getsize(file) if os.path.isfile(file) else 'DIR'
+    print(f"  {file} ({size})")
+
+print(f"\n=== ТЕКУЩАЯ ДИРЕКТОРИЯ: {os.getcwd()} ===")
+print(f"=== ФАЙЛОВ ВСЕГО: {len(os.listdir('.'))} ===")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run("app:app", host="0.0.0.0", port=8000)
