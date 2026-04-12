@@ -1,43 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
-import uvicorn
+from fastapi.staticfiles import StaticFiles
+import traceback
 from pathlib import Path
 
-# ------------------------------------------------------------------
-# Импорт подприложений (каждое в try/except, чтобы не упало всё)
-# ------------------------------------------------------------------
-try:
-    from rot_cut.main import app as rot_cut_app
-    print("✓ rot_cut imported")
-except Exception as e:
-    print(f"✗ rot_cut import error: {e}")
-    rot_cut_app = None
-
-try:
-    from pol_cut.main import app as pol_cut_app
-    print("✓ pol_cut imported")
-except Exception as e:
-    print(f"✗ pol_cut import error: {e}")
-    pol_cut_app = None
-
-try:
-    from sek.main import app as sek_app
-    print("✓ sek imported")
-except Exception as e:
-    print(f"✗ sek import error: {e}")
-    sek_app = None
-
-try:
-    from ras.main import app as ras_app
-    print("✓ ras imported")
-except Exception as e:
-    print(f"✗ ras import error: {e}")
-    ras_app = None
-
-# ------------------------------------------------------------------
-# Основное приложение
-# ------------------------------------------------------------------
 app = FastAPI(title="CAD Tools Suite")
 app.add_middleware(
     CORSMiddleware,
@@ -46,26 +13,49 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Монтируем только те, что загрузились
-if rot_cut_app:
-    app.mount("/rot_cut", rot_cut_app)
-if pol_cut_app:
-    app.mount("/pol_cut", pol_cut_app)
-if sek_app:
-    app.mount("/sek", sek_app)
-if ras_app:
-    app.mount("/ras", ras_app)
+# ------------------------------------------------------------------
+# Функция для монтирования с диагностикой
+# ------------------------------------------------------------------
+def mount_with_diagnostics(mount_path: str, module_name: str, app_attr: str = "app"):
+    """
+    Пытается импортировать module_name и смонтировать app_attr по mount_path.
+    Если не получается, монтирует заглушку, показывающую ошибку.
+    """
+    try:
+        module = __import__(module_name, fromlist=[app_attr])
+        sub_app = getattr(module, app_attr)
+        app.mount(mount_path, sub_app)
+        print(f"✓ {mount_path} mounted from {module_name}")
+    except Exception as e:
+        error_text = traceback.format_exc()
+        print(f"✗ {mount_path} FAILED: {error_text}")
+        
+        # Создаём заглушку, которая вернёт HTML с ошибкой
+        async def error_stub(request):
+            return HTMLResponse(
+                content=f"<h1>Ошибка монтирования {mount_path}</h1><pre>{error_text}</pre>",
+                status_code=500
+            )
+        app.add_api_route(mount_path, error_stub, methods=["GET"])
+        # Также на случай, если нужен слэш в конце
+        app.add_api_route(mount_path + "/", error_stub, methods=["GET"])
 
 # ------------------------------------------------------------------
-# Встроенная стартовая страница (как в старом примере, но ссылки обновлены)
+# Монтируем все подприложения с диагностикой
+# ------------------------------------------------------------------
+mount_with_diagnostics("/rot_cut", "rot_cut.main")
+mount_with_diagnostics("/pol_cut", "pol_cut.main")
+mount_with_diagnostics("/sek", "sek.main")
+mount_with_diagnostics("/ras", "ras.main")
+
+# ------------------------------------------------------------------
+# Стартовая страница (встроена)
 # ------------------------------------------------------------------
 HTML_INDEX = '''<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CAD Tools Suite</title>
-    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -117,36 +107,12 @@ HTML_INDEX = '''<!DOCTYPE html>
     <div class="container">
         <h1>⚡ CAD TOOLS SUITE</h1>
         <div class="tools-grid">
-            <a href="/rot_cut" class="tool-card">
-                <div class="tool-icon">🔧</div>
-                <div class="tool-title">Тела вращения</div>
-                <div class="tool-desc">Профилирование деталей с вырезом. STEP, STL, SVG, DXF.</div>
-            </a>
-            <a href="/pol_cut" class="tool-card">
-                <div class="tool-icon">🔺</div>
-                <div class="tool-title">Многогранники с вырезом</div>
-                <div class="tool-desc">Пирамиды и призмы. HLR, трёхпроекционный чертёж.</div>
-            </a>
-            <a href="/sek" class="tool-card">
-                <div class="tool-icon">✂️</div>
-                <div class="tool-title">Пересечения</div>
-                <div class="tool-desc">Анализ пересечений тел. STEP, STL.</div>
-            </a>
-            <a href="/ras" class="tool-card">
-                <div class="tool-icon">📐</div>
-                <div class="tool-title">Развёртки</div>
-                <div class="tool-desc">Построение развёрток. DXF, SVG.</div>
-            </a>
-            <a href="/epure" class="tool-card">
-                <div class="tool-icon">📏</div>
-                <div class="tool-title">Эпюр Монжа</div>
-                <div class="tool-desc">Трёхпроекционное черчение. Линии, прямоугольники, эллипсы.</div>
-            </a>
-            <a href="/ask" class="tool-card">
-                <div class="tool-icon">🎨</div>
-                <div class="tool-title">Аксонометрия</div>
-                <div class="tool-desc">Изометрические и диметрические проекции.</div>
-            </a>
+            <a href="/rot_cut" class="tool-card"><div class="tool-icon">🔧</div><div class="tool-title">Тела вращения</div><div class="tool-desc">Профилирование деталей с вырезом.</div></a>
+            <a href="/pol_cut" class="tool-card"><div class="tool-icon">🔺</div><div class="tool-title">Многогранники</div><div class="tool-desc">Пирамиды и призмы. HLR.</div></a>
+            <a href="/sek" class="tool-card"><div class="tool-icon">✂️</div><div class="tool-title">Пересечения</div><div class="tool-desc">Анализ пересечений тел.</div></a>
+            <a href="/ras" class="tool-card"><div class="tool-icon">📐</div><div class="tool-title">Развёртки</div><div class="tool-desc">Построение развёрток.</div></a>
+            <a href="/epure" class="tool-card"><div class="tool-icon">📏</div><div class="tool-title">Эпюр Монжа</div><div class="tool-desc">Трёхпроекционное черчение.</div></a>
+            <a href="/ask" class="tool-card"><div class="tool-icon">🎨</div><div class="tool-title">Аксонометрия</div><div class="tool-desc">Изометрические и диметрические проекции.</div></a>
         </div>
         <footer>CAD Tools Suite | injgaf.ru</footer>
     </div>
@@ -159,29 +125,22 @@ async def root():
     return HTML_INDEX
 
 # ------------------------------------------------------------------
-# Эпюр и аксонометрия с защитой от ошибок
+# Эпюр и аксонометрия с диагностикой
 # ------------------------------------------------------------------
-@app.get("/epure", response_class=HTMLResponse)
-async def epure_mode():
+@app.get("/epure")
+async def epure():
     try:
         return FileResponse("alp.html")
     except Exception as e:
-        # Если файл не читается, вернём простой HTML
-        return HTMLResponse(f"<h1>Ошибка загрузки alp.html</h1><p>{e}</p><p>Проверьте наличие файла в корне.</p>", status_code=500)
+        return HTMLResponse(f"<h1>Ошибка загрузки alp.html</h1><pre>{traceback.format_exc()}</pre>", status_code=500)
 
-@app.get("/ask", response_class=HTMLResponse)
-async def axonometry_mode():
+@app.get("/ask")
+async def ask():
     try:
         return FileResponse("aks.html")
     except Exception as e:
-        return HTMLResponse(f"<h1>Ошибка загрузки aks.html</h1><p>{e}</p><p>Проверьте наличие файла в корне.</p>", status_code=500)
-
-@app.get("/favicon.ico", include_in_schema=False)
-async def get_favicon():
-    favicon = Path("favicon.ico")
-    if favicon.exists():
-        return FileResponse("favicon.ico")
-    return HTMLResponse("", status_code=204)
+        return HTMLResponse(f"<h1>Ошибка загрузки aks.html</h1><pre>{traceback.format_exc()}</pre>", status_code=500)
 
 if __name__ == "__main__":
+    import uvicorn
     uvicorn.run("app:app", host="0.0.0.0", port=8000)
