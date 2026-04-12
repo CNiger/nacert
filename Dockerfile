@@ -17,16 +17,11 @@ SHELL ["conda", "run", "-n", "cadenv", "/bin/bash", "-c"]
 
 WORKDIR /app
 
-# Копируем всё
 COPY . .
 
-# Создаём нужные папки (на случай, если их нет в репозитории)
-RUN mkdir -p rot_cut/temp rot_cut/static rot_cut/primitives \
-             pol_cut/temp pol_cut/static \
-             sek/temp sek/static sek/primitives \
-             ras/temp ras/static \
-             temp static
+RUN mkdir -p rot_cut/temp rot_cut/static rot_cut/primitives
 
 EXPOSE 8000
 
-CMD ["conda", "run", "-n", "cadenv", "uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
+# ЗАПУСКАЕМ НАПРЯМУЮ rot_cut, а не app.py
+CMD ["conda", "run", "-n", "cadenv", "uvicorn", "rot_cut.main:app", "--host", "0.0.0.0", "--port", "8000"]
