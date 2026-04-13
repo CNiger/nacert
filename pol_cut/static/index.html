@@ -145,7 +145,7 @@
     }
     
     function computeBoundingBox(edges) {
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        let minX = Infinity, maxX = -Infinity, minY = -Infinity, maxY = -Infinity;
         for (let edge of edges) {
             for (let [x, y] of edge) {
                 minX = Math.min(minX, x);
@@ -359,7 +359,7 @@
         if (basePoints.length < 3 || !apexPoint) { statusDiv.innerText = `❌ Основание (>=3) и точка должны быть заданы.`; return; }
         document.getElementById('loadingOverlay').style.display = 'flex';
         try {
-            const response = await fetch('/api/generate', {
+            const response = await fetch('api/generate', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ shape: currentShape, base_points: basePoints, apex_point: apexPoint })
             });
@@ -368,7 +368,11 @@
                 currentBaseFilename = data.base_filename;
                 basePoints = []; apexPoint = null; mode = 'idle'; cutPoints = [];
                 downloadGroup.style.display = 'flex';
-                downloadStep.onclick = () => downloadFile(data.downloads.step.url, data.downloads.step.filename);
+                downloadStep.onclick = () => {
+                    let url = data.downloads.step.url;
+                    if (url.startsWith('/')) url = '.' + url;
+                    downloadFile(url, data.downloads.step.filename);
+                };
                 stage1Panel.style.display = 'none'; stage2Panel.style.display = 'block';
                 statusDiv.innerText = `✅ Модель создана! Объём: ${data.volumes.total.toFixed(1)} мм³. Теперь выберите сторону для выреза.`;
                 sideBtns.forEach(btn => { btn.classList.remove('active'); if (btn.dataset.side === 'front') btn.classList.add('active'); });
@@ -399,7 +403,7 @@
         if (!currentBaseFilename) { statusDiv.innerText = '❌ Сначала создайте модель.'; return; }
         document.getElementById('loadingOverlay').style.display = 'flex';
         try {
-            const response = await fetch(`/api/get-hlr?base_filename=${currentBaseFilename}&side=${currentSide}`);
+            const response = await fetch(`api/get-hlr?base_filename=${currentBaseFilename}&side=${currentSide}`);
             if (!response.ok) throw new Error('Failed to load HLR');
             const data = await response.json();
             hlrData = data;
@@ -424,7 +428,7 @@
         if (cutPoints.length < 3) { statusDiv.innerText = `❌ Контур выреза должен содержать минимум 3 точки.`; return; }
         document.getElementById('loadingOverlay').style.display = 'flex';
         try {
-            const response = await fetch('/api/apply-cut', {
+            const response = await fetch('api/apply-cut', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ base_filename: currentBaseFilename, side: currentSide, contour: cutPoints })
             });
@@ -432,7 +436,11 @@
             if (data.success) {
                 currentBaseFilename = data.base_filename;
                 downloadGroup.style.display = 'flex';
-                downloadStep.onclick = () => downloadFile(data.downloads.step.url, data.downloads.step.filename);
+                downloadStep.onclick = () => {
+                    let url = data.downloads.step.url;
+                    if (url.startsWith('/')) url = '.' + url;
+                    downloadFile(url, data.downloads.step.filename);
+                };
                 statusDiv.innerText = `✅ Вырез применён! Новый объём: ${data.volumes.total.toFixed(1)} мм³.`;
                 cutPoints = []; mode = 'idle'; applyCutBtn.disabled = true; startCutBtn.disabled = true;
                 hlrData = null; showProjection = false;
@@ -443,7 +451,6 @@
         finally { document.getElementById('loadingOverlay').style.display = 'none'; }
     });
     
-    // Экспорт чертежа с тремя проекциями
     exportDrawingBtn.addEventListener('click', async () => {
         if (!currentBaseFilename) {
             statusDiv.innerText = '❌ Сначала создайте модель.';
@@ -451,7 +458,7 @@
         }
         document.getElementById('loadingOverlay').style.display = 'flex';
         try {
-            const res = await fetch(`/api/export-drawing?base_filename=${currentBaseFilename}`);
+            const res = await fetch(`api/export-drawing?base_filename=${currentBaseFilename}`);
             if (!res.ok) throw new Error('Ошибка экспорта');
             
             const blob = await res.blob();
