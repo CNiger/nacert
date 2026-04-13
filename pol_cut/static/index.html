@@ -402,7 +402,11 @@
             const response = await fetch(`/api/get-hlr?base_filename=${currentBaseFilename}&side=${currentSide}`);
             if (!response.ok) throw new Error('Failed to load HLR');
             const data = await response.json();
-            hlrData = data;
+            hlrData = {
+                visible: data.visible ?? data.data?.visible ?? [],
+                hidden:  data.hidden  ?? data.data?.hidden  ?? []
+            };
+            console.log('HLR normalized:', hlrData);
             showProjection = true;
             startCutBtn.disabled = false;
             statusDiv.innerText = `📐 Проекция (HLR) загружена. Нажмите "Рисовать контур выреза" и кликайте по холсту.`;
