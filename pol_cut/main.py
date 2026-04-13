@@ -487,7 +487,8 @@ def health():
     return {"status": "ok", "version": "8.0.2"}
 
 
-app.mount("/", StaticFiles(directory="static", html=True))
+from pathlib import Path
+app.mount("/", StaticFiles(directory=Path(__file__).parent / "static", html=True))
 
 
 if __name__ == "__main__":
