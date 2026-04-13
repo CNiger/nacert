@@ -486,6 +486,41 @@
 
     let selectedFormat = 'step';
 
+    // Функция для преобразования абсолютных путей в относительные (добавляет './' в начало, если путь начинается с '/')
+    function normalizeUrl(url) {
+        if (!url) return url;
+        // Если URL начинается с '/' (абсолютный путь относительно корня), добавляем '.' в начало
+        if (url.startsWith('/')) {
+            return '.' + url;
+        }
+        // Если URL уже начинается с './' или является полным URL (http://, https://), оставляем как есть
+        return url;
+    }
+
+    // Рекурсивная нормализация всех URL в объекте downloads
+    function normalizeDownloads(data) {
+        if (!data || !data.downloads) return data;
+        const downloads = data.downloads;
+        if (downloads.step && downloads.step.url) {
+            downloads.step.url = normalizeUrl(downloads.step.url);
+        }
+        if (downloads.stl && downloads.stl.url) {
+            downloads.stl.url = normalizeUrl(downloads.stl.url);
+        }
+        if (downloads.svg) {
+            if (downloads.svg.top && downloads.svg.top.url) {
+                downloads.svg.top.url = normalizeUrl(downloads.svg.top.url);
+            }
+            if (downloads.svg.front && downloads.svg.front.url) {
+                downloads.svg.front.url = normalizeUrl(downloads.svg.front.url);
+            }
+            if (downloads.svg.left && downloads.svg.left.url) {
+                downloads.svg.left.url = normalizeUrl(downloads.svg.left.url);
+            }
+        }
+        return data;
+    }
+
     function updateStatus(message, isError = false, isOk = false) {
         statusMsgSpan.innerHTML = isError ? `[ERR] ${message}` : (isOk ? `[OK] ${message}` : `[SYS] ${message}`);
         telemetryMsgSpan.innerText = message;
@@ -742,7 +777,8 @@
         document.getElementById('loadingOverlay').style.display = 'flex';
         updateStatus('Генерация 3D модели...');
         try {
-            const response = await fetch('/api/create-model', {
+            // ИСПРАВЛЕНО: относительный путь вместо абсолютного
+            const response = await fetch('./api/create-model', {
                 method: 'POST',
                 headers: {'Content-Type':'application/json'},
                 body: JSON.stringify({ shape: currentShape, points: currentPoints })
@@ -750,10 +786,12 @@
             if(!response.ok) throw new Error(`HTTP ${response.status}`);
             const data = await response.json();
             if(data.success) {
-                modelData = data;
-                if(data.downloads.step) downloadStepBtn.disabled = false;
-                if(data.downloads.stl) downloadStlBtn.disabled = false;
-                if(data.downloads.svg) downloadPNGBtn.disabled = false;
+                // Нормализуем URL в ответе (добавляем './' при необходимости)
+                const normalizedData = normalizeDownloads(data);
+                modelData = normalizedData;
+                if(modelData.downloads.step) downloadStepBtn.disabled = false;
+                if(modelData.downloads.stl) downloadStlBtn.disabled = false;
+                if(modelData.downloads.svg) downloadPNGBtn.disabled = false;
                 updateStatus('Модель готова', false, true);
                 generateBtn.classList.add('power-flash');
                 setTimeout(() => generateBtn.classList.remove('power-flash'), 300);
