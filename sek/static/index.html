@@ -243,6 +243,39 @@
     const intersectBtn = document.getElementById('intersectBtn'), swapBtn = document.getElementById('swapBtn');
     const resultArea = document.getElementById('resultArea'), volumeText = document.getElementById('volumeText'), downloadLinks = document.getElementById('downloadLinks'), resultMsg = document.getElementById('resultMsg'), loadingOverlay = document.getElementById('loadingOverlay');
     
+    // Функция для преобразования абсолютных путей в относительные
+    function normalizeUrl(url) {
+        if (!url) return url;
+        if (url.startsWith('/')) {
+            return '.' + url;
+        }
+        return url;
+    }
+    
+    // Рекурсивная нормализация всех URL в объекте downloads
+    function normalizeDownloads(data) {
+        if (!data || !data.downloads) return data;
+        const downloads = data.downloads;
+        if (downloads.step && downloads.step.url) {
+            downloads.step.url = normalizeUrl(downloads.step.url);
+        }
+        if (downloads.stl && downloads.stl.url) {
+            downloads.stl.url = normalizeUrl(downloads.stl.url);
+        }
+        if (downloads.svg) {
+            if (downloads.svg.front && downloads.svg.front.url) {
+                downloads.svg.front.url = normalizeUrl(downloads.svg.front.url);
+            }
+            if (downloads.svg.top && downloads.svg.top.url) {
+                downloads.svg.top.url = normalizeUrl(downloads.svg.top.url);
+            }
+            if (downloads.svg.left && downloads.svg.left.url) {
+                downloads.svg.left.url = normalizeUrl(downloads.svg.left.url);
+            }
+        }
+        return data;
+    }
+    
     function worldToScreen(x, z) { return { x: width/2 + x*SCALE, y: height/2 - z*SCALE }; }
     function screenToWorld(px, py) { return { x: (px - width/2)/SCALE, z: (height/2 - py)/SCALE }; }
     
@@ -358,18 +391,21 @@
         const body2 = { type: bodies.B.type, position: { x: bodies.B.x, y: 0, z: bodies.B.z }, rotation: { axis: "Y", angle_deg: bodies.B.rot } };
         loadingOverlay.style.display = 'flex';
         try {
-            const res = await fetch('/api/intersect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body1, body2 }) });
+            // ИСПРАВЛЕНО: относительный путь вместо абсолютного
+            const res = await fetch('./api/intersect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body1, body2 }) });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             if (data.success) {
-                volumeText.innerText = `📐 Объём пересечения: ${data.volume.toFixed(2)} мм³`;
+                // Нормализуем URL в ответе
+                const normalizedData = normalizeDownloads(data);
+                volumeText.innerText = `📐 Объём пересечения: ${normalizedData.volume.toFixed(2)} мм³`;
                 let html = '';
-                if (data.downloads.step) html += `<a href="${data.downloads.step.url}" class="download-btn" download>📥 STEP</a>`;
-                if (data.downloads.stl) html += `<a href="${data.downloads.stl.url}" class="download-btn" download>📥 STL</a>`;
-                if (data.downloads.svg) {
-                    html += `<a href="${data.downloads.svg.front.url}" class="download-btn" download>📐 Вид спереди</a>`;
-                    html += `<a href="${data.downloads.svg.top.url}" class="download-btn" download>📐 Вид сверху</a>`;
-                    html += `<a href="${data.downloads.svg.left.url}" class="download-btn" download>📐 Вид слева</a>`;
+                if (normalizedData.downloads.step) html += `<a href="${normalizedData.downloads.step.url}" class="download-btn" download>📥 STEP</a>`;
+                if (normalizedData.downloads.stl) html += `<a href="${normalizedData.downloads.stl.url}" class="download-btn" download>📥 STL</a>`;
+                if (normalizedData.downloads.svg) {
+                    html += `<a href="${normalizedData.downloads.svg.front.url}" class="download-btn" download>📐 Вид спереди</a>`;
+                    html += `<a href="${normalizedData.downloads.svg.top.url}" class="download-btn" download>📐 Вид сверху</a>`;
+                    html += `<a href="${normalizedData.downloads.svg.left.url}" class="download-btn" download>📐 Вид слева</a>`;
                 }
                 downloadLinks.innerHTML = html;
                 resultMsg.innerText = '✅ Пересечение успешно вычислено.';
