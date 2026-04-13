@@ -12,7 +12,7 @@
         .flex-row { display: flex; gap: 24px; flex-wrap: wrap; }
         .canvas-panel { flex: 2; min-width: 300px; }
         .controls-panel { flex: 1; min-width: 280px; }
-        .canvas-container { background: #1e2129; border: 1px solid #3a3e48; border-radius: 4px; margin-bottom: 20px; }
+        .canvas-container { background: #1e2129; border: 1px solid #3a3e48; border-radius: 4px; margin-bottom: 20px; position: relative; }
         canvas { width: 100%; display: block; background: #1e2129; cursor: crosshair; }
         .status { background: #0a0c10; padding: 10px; font-family: monospace; font-size: 0.8rem; margin-top: 12px; border-left: 3px solid #ff5500; }
         .shape-selector { display: flex; gap: 12px; margin-bottom: 20px; }
@@ -99,6 +99,9 @@
     canvas.width = width; canvas.height = height;
     ctx.setTransform(1, 0, 0, -1, 0, height);
     
+    // Базовый путь для API (фиксированный, потому что сервис смонтирован в /pol_cut)
+    const API_BASE = '/pol_cut';
+    
     let currentShape = 'prism';
     let basePoints = [];
     let apexPoint = null;
@@ -161,7 +164,7 @@
         if (!hlrData) return;
         const visible = hlrData.visible;
         const hidden = hlrData.hidden;
-        const allEdges = [...visible, ...hidden];
+        const allEdges = [...(visible || []), ...(hidden || [])];
         if (allEdges.length === 0) {
             ctx.save();
             ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -190,7 +193,7 @@
         ctx.strokeStyle = '#88aaff';
         ctx.lineWidth = 5;
         for (let edge of hidden) {
-            if (edge.length < 2) continue;
+            if (!edge || edge.length < 2) continue;
             ctx.beginPath();
             const [fx, fy] = tr(edge[0]);
             ctx.moveTo(fx, fy);
@@ -205,7 +208,7 @@
         ctx.strokeStyle = '#ff8c42';
         ctx.lineWidth = 2.5;
         for (let edge of visible) {
-            if (edge.length < 2) continue;
+            if (!edge || edge.length < 2) continue;
             ctx.beginPath();
             const [fx, fy] = tr(edge[0]);
             ctx.moveTo(fx, fy);
@@ -217,7 +220,7 @@
         }
         ctx.restore();
         
-        debugInfo.innerText = `V:${visible.length}  H:${hidden.length}`;
+        debugInfo.innerText = `V:${visible?.length || 0}  H:${hidden?.length || 0}`;
     }
     
     function draw() {
@@ -359,7 +362,7 @@
         if (basePoints.length < 3 || !apexPoint) { statusDiv.innerText = `❌ Основание (>=3) и точка должны быть заданы.`; return; }
         document.getElementById('loadingOverlay').style.display = 'flex';
         try {
-            const response = await fetch('/api/generate', {
+            const response = await fetch(`${API_BASE}/api/generate`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ shape: currentShape, base_points: basePoints, apex_point: apexPoint })
             });
@@ -368,7 +371,10 @@
                 currentBaseFilename = data.base_filename;
                 basePoints = []; apexPoint = null; mode = 'idle'; cutPoints = [];
                 downloadGroup.style.display = 'flex';
-                downloadStep.onclick = () => downloadFile(data.downloads.step.url, data.downloads.step.filename);
+                downloadStep.onclick = () => {
+                    const url = `${API_BASE}${data.downloads.step.url}`;
+                    downloadFile(url, data.downloads.step.filename);
+                };
                 stage1Panel.style.display = 'none'; stage2Panel.style.display = 'block';
                 statusDiv.innerText = `✅ Модель создана! Объём: ${data.volumes.total.toFixed(1)} мм³. Теперь выберите сторону для выреза.`;
                 sideBtns.forEach(btn => { btn.classList.remove('active'); if (btn.dataset.side === 'front') btn.classList.add('active'); });
@@ -399,7 +405,7 @@
         if (!currentBaseFilename) { statusDiv.innerText = '❌ Сначала создайте модель.'; return; }
         document.getElementById('loadingOverlay').style.display = 'flex';
         try {
-            const response = await fetch(`/api/get-hlr?base_filename=${currentBaseFilename}&side=${currentSide}`);
+            const response = await fetch(`${API_BASE}/api/get-hlr?base_filename=${currentBaseFilename}&side=${currentSide}`);
             if (!response.ok) throw new Error('Failed to load HLR');
             const data = await response.json();
             hlrData = {
@@ -428,7 +434,7 @@
         if (cutPoints.length < 3) { statusDiv.innerText = `❌ Контур выреза должен содержать минимум 3 точки.`; return; }
         document.getElementById('loadingOverlay').style.display = 'flex';
         try {
-            const response = await fetch('/api/apply-cut', {
+            const response = await fetch(`${API_BASE}/api/apply-cut`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ base_filename: currentBaseFilename, side: currentSide, contour: cutPoints })
             });
@@ -436,7 +442,10 @@
             if (data.success) {
                 currentBaseFilename = data.base_filename;
                 downloadGroup.style.display = 'flex';
-                downloadStep.onclick = () => downloadFile(data.downloads.step.url, data.downloads.step.filename);
+                downloadStep.onclick = () => {
+                    const url = `${API_BASE}${data.downloads.step.url}`;
+                    downloadFile(url, data.downloads.step.filename);
+                };
                 statusDiv.innerText = `✅ Вырез применён! Новый объём: ${data.volumes.total.toFixed(1)} мм³.`;
                 cutPoints = []; mode = 'idle'; applyCutBtn.disabled = true; startCutBtn.disabled = true;
                 hlrData = null; showProjection = false;
@@ -447,7 +456,6 @@
         finally { document.getElementById('loadingOverlay').style.display = 'none'; }
     });
     
-    // Экспорт чертежа с тремя проекциями
     exportDrawingBtn.addEventListener('click', async () => {
         if (!currentBaseFilename) {
             statusDiv.innerText = '❌ Сначала создайте модель.';
@@ -455,7 +463,7 @@
         }
         document.getElementById('loadingOverlay').style.display = 'flex';
         try {
-            const res = await fetch(`/api/export-drawing?base_filename=${currentBaseFilename}`);
+            const res = await fetch(`${API_BASE}/api/export-drawing?base_filename=${currentBaseFilename}`);
             if (!res.ok) throw new Error('Ошибка экспорта');
             
             const blob = await res.blob();
