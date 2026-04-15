@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+import os
+import time
+import asyncio
+from pathlib import Path
 
 # Импорты подприложений
 try:
@@ -49,12 +53,83 @@ if sek_app:
 if ras_app:
     app.mount("/ras", ras_app)
 
-# Стартовая страница
+# ------------------ Функции очистки временных папок ------------------
+
+def clean_old_files(directory: Path, age_minutes: int = 10):
+    """
+    Удаляет все файлы в указанной директории, которые старше age_minutes минут.
+    Также удаляет пустые поддиректории.
+    """
+    if not directory.exists():
+        return
+    now = time.time()
+    cutoff = now - age_minutes * 60
+
+    for root, dirs, files in os.walk(directory, topdown=False):
+        root_path = Path(root)
+        for file in files:
+            file_path = root_path / file
+            try:
+                if file_path.stat().st_mtime < cutoff:
+                    file_path.unlink()
+                    print(f"Удалён старый файл: {file_path}")
+            except Exception as e:
+                print(f"Ошибка при удалении {file_path}: {e}")
+        # Удаляем пустые папки
+        for dir_name in dirs:
+            dir_path = root_path / dir_name
+            try:
+                if not any(dir_path.iterdir()):
+                    dir_path.rmdir()
+                    print(f"Удалена пустая папка: {dir_path}")
+            except Exception as e:
+                print(f"Ошибка при удалении папки {dir_path}: {e}")
+
+async def periodic_cleanup(interval_minutes: int = 5):
+    """
+    Фоновая задача: каждые interval_minutes минут вызывает очистку temp-папок.
+    """
+    while True:
+        try:
+            # Список папок для очистки (относительно текущего расположения app.py)
+            base_dir = Path(__file__).parent
+            temp_dirs = [
+                base_dir / "rot_cut" / "temp",
+                base_dir / "pol_cut" / "temp",
+                base_dir / "sek" / "temp",
+                base_dir / "ras" / "temp",
+            ]
+            for temp_dir in temp_dirs:
+                clean_old_files(temp_dir, age_minutes=10)
+        except Exception as e:
+            print(f"Ошибка в periodic_cleanup: {e}")
+        # Ждём заданный интервал
+        await asyncio.sleep(interval_minutes * 60)
+
+# ------------------ Запуск и остановка фоновой задачи ------------------
+
+cleanup_task = None
+
+@app.on_event("startup")
+async def startup_event():
+    global cleanup_task
+    # Запускаем фоновую очистку раз в 5 минут
+    cleanup_task = asyncio.create_task(periodic_cleanup(interval_minutes=5))
+    print("Фоновая очистка временных папок запущена (интервал 5 минут)")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    global cleanup_task
+    if cleanup_task:
+        cleanup_task.cancel()
+        print("Фоновая очистка остановлена")
+
+# ------------------ Статические страницы ------------------
+
 @app.get("/")
 def start():
     return FileResponse("start.html")
 
-# Эпюр и аксонометрия
 @app.get("/epure")
 def epure():
     return FileResponse("alp.html")
@@ -62,6 +137,8 @@ def epure():
 @app.get("/ask")
 def ask():
     return FileResponse("aks.html")
+
+# ------------------ Точка входа ------------------
 
 if __name__ == "__main__":
     import uvicorn
