@@ -125,6 +125,13 @@ async def shutdown_event():
         print("Фоновая очистка остановлена")
 
 # ------------------ Статические страницы ------------------
+@app.get("/lek/{name}")
+def lecture(name: str):
+    path = Path(__file__).parent / "lek" / name / "index.html"
+    if path.exists():
+        return FileResponse(path)
+    return "Лекция не найдена", 404
+
 
 @app.get("/")
 def start():
