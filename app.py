@@ -129,6 +129,13 @@ async def shutdown_event():
 def lekz():
     return FileResponse("lekz.html")
 
+@app.get("/lek/{name}")
+def lecture(name: str):
+    path = Path(__file__).parent / "lek" / name / "index.html"
+    if path.exists():
+        return FileResponse(path)
+    return {"error": f"Лекция '{name}' не найдена"}, 404
+
 @app.get("/")
 def start():
     return FileResponse("start.html")
