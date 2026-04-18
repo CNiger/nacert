@@ -3,264 +3,264 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Эпюр Монжа · Инженерный стиль (Touch fix)</title>
+    <title>Эпюр Монжа · Индустриальный футуризм + 3D</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
     <style>
-        * {
-            user-select: none;
-            box-sizing: border-box;
-            touch-action: manipulation;
+        * { user-select: none; box-sizing: border-box; touch-action: manipulation; }
+        
+        /* ---------- INDUSTRIAL FUTURISM CORE ---------- */
+        :root {
+            --metal-base: #171a1f;
+            --metal-panel: #1f232a;
+            --metal-canvas: #1e2129;
+            --metal-border: #3a3e48;
+            --text-primary: #eef2f8;
+            --text-secondary: #9ca3b5;
+            
+            --orange-pulse: #ff5500;
+            --orange-active: #e6451a;
+            --orange-glow: #b53a0a;
+            --orange-preview: #ff8c42;
+            
+            --cyan-system: #00a6c4;
+            --cyan-sensor: #2a9d8f;
+            
+            --success: #4caf50;
+            --error: #ff5e5e;
+            --warning: #ffb347;
         }
-
-        body {
-            margin: 0;
-            padding: 0;
-            background: #0b0b0f;
-            font-family: 'JetBrains Mono', 'Fira Code', 'Inter', monospace;
+        
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background: var(--metal-base);
+            background-image: repeating-linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.02) 0px,
+                rgba(255, 255, 255, 0.02) 1px,
+                transparent 1px,
+                transparent 12px
+            );
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             overflow: hidden;
         }
-
-        .toolbar {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            z-index: 100;
-            width: 260px;
-            background: #111216;
-            border-radius: 20px;
-            padding: 20px 12px;
-            border: 1px solid #2a2c32;
-            backdrop-filter: blur(2px);
-            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        
+        /* ---------- ТУЛБАР (металл, сварка) ---------- */
+        .toolbar { 
+            position: fixed; 
+            top: 20px; 
+            left: 20px; 
+            z-index: 100; 
+            width: 280px; 
+            background: var(--metal-panel);
+            border-radius: 2px;
+            padding: 20px 12px; 
+            border: 1px solid var(--metal-border);
+            box-shadow: inset 0 0 0 1px rgba(255,85,0,0.1), 0 8px 16px rgba(0,0,0,0.5);
         }
-
-        .tool-btn {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            width: 100%;
-            padding: 10px 14px;
-            background: #1a1c22;
-            border: 1px solid #2e313a;
-            border-radius: 12px;
-            font-size: 0.85rem;
-            font-weight: 500;
-            font-family: inherit;
-            color: #e9e9ef;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            text-align: left;
-            margin-bottom: 8px;
+        
+        .tool-btn { 
+            display: flex; 
+            align-items: center; 
+            gap: 12px; 
+            width: 100%; 
+            padding: 10px 14px; 
+            background: #1f232a;
+            border: 1px solid var(--metal-border); 
+            border-radius: 2px; 
+            font-size: 0.85rem; 
+            font-weight: 500; 
+            font-family: inherit; 
+            color: var(--text-primary); 
+            cursor: pointer; 
+            transition: all 0.08s linear; 
+            text-align: left; 
+            margin-bottom: 8px; 
         }
-
-        .tool-btn:hover {
-            background: #2a2c34;
-            border-color: #f97316;
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(249,115,22,0.2);
+        .tool-btn:hover { 
+            transform: translateY(1px); 
+            border-color: var(--orange-active); 
+            box-shadow: 0 2px 8px rgba(255,85,0,0.3);
         }
-
-        .mode-active {
-            background: #f97316;
-            border-color: #f97316;
-            color: #000000;
-            font-weight: 600;
-            box-shadow: 0 2px 8px rgba(249,115,22,0.3);
+        .tool-btn:active { transform: translateY(2px); }
+        .mode-active { 
+            border-bottom: 2px solid var(--orange-pulse);
+            color: var(--orange-pulse);
+            background: #252a33;
         }
-
-        .new-object-btn {
-            background: #1f2129;
-            border: 1px solid #f97316;
-            margin-top: 16px;
-            justify-content: space-between;
+        .new-object-btn { 
+            background: #1f2129; 
+            border: 1px solid var(--orange-pulse); 
+            margin-top: 16px; 
+            justify-content: space-between; 
         }
-
-        .btn-icon {
-            font-size: 1.1rem;
-            width: 28px;
-            text-align: center;
-        }
-
-        .right-badge {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .color-indicator {
-            width: 22px;
-            height: 22px;
-            border-radius: 22px;
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 0 0 1px #0b0b0f;
-        }
-
-        .status-area {
-            margin-top: 24px;
-            font-size: 0.7rem;
-            background: #0f0f12;
-            padding: 12px;
-            border-radius: 16px;
-            border-left: 3px solid #f97316;
-        }
-
-        .status-text {
-            margin: 0;
-            line-height: 1.4;
-            color: #b4b7c5;
-        }
-
-        .canvas-area {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            width: 100%;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        .container {
-            display: flex;
-            gap: 0;
-            position: relative;
-            background: #0a0a0e;
-            padding: 6px;
-            border-radius: 16px;
-            border: 1px solid #2c2e36;
-        }
-
-        .left {
+        .btn-icon { font-size: 1.1rem; width: 28px; text-align: center; }
+        .right-badge { display: flex; align-items: center; gap: 8px; }
+        .color-indicator { width: 22px; height: 22px; border-radius: 2px; border: 1px solid rgba(255,255,255,0.3); }
+        
+        /* ========== ПАНЕЛИ ИНФО — ИНДУСТРИАЛЬНЫЙ ФУТУРИЗМ ========== */
+        .info-panel { 
+            position: fixed; 
+            top: 20px; 
+            right: 20px; 
+            z-index: 100; 
+            width: 320px; 
+            background: var(--metal-panel);
+            border: 1px solid var(--metal-border);
+            border-radius: 2px;
+            box-shadow: inset 0 0 0 1px rgba(255,85,0,0.08), 0 6px 14px rgba(0,0,0,0.5);
+            backdrop-filter: none;
             display: flex;
             flex-direction: column;
+            gap: 12px;
+            padding: 14px;
+        }
+        
+        .info-card { 
+            background: #181c23;
+            border-left: 3px solid var(--orange-pulse);
+            border-radius: 2px;
+            padding: 12px 14px;
+            position: relative;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.02), 0 2px 3px rgba(0,0,0,0.3);
+            transition: border-left-color 0.1s ease;
+        }
+        .info-card::after {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            right: 4px;
+            bottom: 4px;
+            pointer-events: none;
+            border: 1px dashed rgba(255,85,0,0.2);
+            border-radius: 0px;
+        }
+        
+        .info-title { 
+            font-size: 0.75rem; 
+            font-weight: 600; 
+            color: var(--orange-pulse);
+            margin-bottom: 12px; 
+            letter-spacing: 1px;
+            display: flex; 
+            align-items: center; 
+            gap: 8px;
+            text-transform: uppercase;
+            font-family: 'Major Mono Display', monospace;
+        }
+        .info-content { 
+            font-size: 0.7rem; 
+            color: var(--text-secondary); 
+            line-height: 1.5; 
+            font-family: monospace; 
+        }
+        .class-type { 
+            color: var(--orange-pulse); 
+            font-weight: bold;
+            background: rgba(255,85,0,0.12);
+            display: inline-block;
+            padding: 2px 8px;
+            letter-spacing: 0.3px;
+            border-left: 2px solid var(--orange-pulse);
+        }
+        .class-desc { 
+            color: #b9c2d4; 
+            margin-top: 6px; 
+            font-size: 0.68rem;
+        }
+        
+        #lineVector, #planeNormal {
+            font-size: 0.65rem;
+            color: var(--cyan-sensor);
+            margin-top: 8px;
+            border-top: 1px dashed #3a3e48;
+            padding-top: 6px;
+            font-family: monospace;
+        }
+        
+        /* ---------- ХОЛСТЫ + 3D ---------- */
+        .canvas-area { display: flex; justify-content: center; align-items: center; width: 100%; height: 100vh; overflow: hidden; }
+        
+        /* 🔥 НОВАЯ ОРАНЖЕВАЯ ОБВОДКА ВОКРУГ ОСНОВНОГО КОНТЕЙНЕРА С ЭПЮРОМ 🔥 */
+        .container { 
+            display: flex; 
+            gap: 0; 
+            position: relative; 
+            background: #0a0a0e; 
+            padding: 6px; 
+            border-radius: 16px;          /* небольшое скругление */
+            border: 2px solid #ff5500;    /* яркая оранжевая обводка */
+            box-shadow: 0 0 0 1px rgba(255,85,0,0.3), 0 0 12px rgba(255,85,0,0.3);
+        }
+        
+        .left { display: flex; flex-direction: column; gap: 0; }
+        #profileColumn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             gap: 0;
         }
-
-        canvas {
-            background-color: #111216;
-            cursor: crosshair;
-            display: block;
-            border: 1px solid #2c2e36;
-            touch-action: none;
+        canvas { 
+            background-color: var(--metal-canvas);
+            cursor: crosshair; 
+            display: block; 
+            border: 1px solid var(--metal-border);
+            touch-action: none; 
             will-change: transform;
-            transform: translateZ(0);
+            transition: border-color 0.08s linear;
         }
         canvas:first-child { border-bottom: none; }
-
-        .common-axes {
+        
+        #threeContainer { 
+            background: #111216; 
+            overflow: hidden;
+            position: relative;
+            border: 1px solid var(--metal-border);
+            margin-top: 0;
+        }
+        
+        .common-axes { position: absolute; pointer-events: none; z-index: 10; top: 0; left: 0; width: 100%; height: 100%; }
+        .axis-line { position: absolute; background-color: currentColor; opacity: 0.85; }
+        .axis-label { position: absolute; font-size: 11px; font-weight: 600; background: #111216cc; backdrop-filter: blur(2px); padding: 2px 5px; border-radius: 0px; font-family: monospace; color: var(--orange-pulse); border-left: 1px solid var(--orange-pulse); }
+        
+        @keyframes glowDischarge {
+            0% { border-color: var(--orange-pulse); box-shadow: 0 0 4px var(--orange-pulse); }
+            50% { border-color: var(--orange-glow); box-shadow: 0 0 12px var(--orange-pulse); }
+            100% { border-color: var(--orange-pulse); box-shadow: 0 0 4px var(--orange-pulse); }
+        }
+        .drawing-active {
+            animation: glowDischarge 1s infinite;
+        }
+        
+        /* === СЛОЙ ДЛЯ ЛИНИЙ СВЯЗИ (ЭНЕРГЕТИЧЕСКИЙ СИНИЙ ПУНКТИР) === */
+        .connection-lines-svg {
             position: absolute;
-            pointer-events: none;
-            z-index: 10;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
+            pointer-events: none;
+            z-index: 50;
         }
-
-        .axis-line {
-            position: absolute;
-            background-color: currentColor;
-            opacity: 0.8;
+        
+        @media (max-width: 860px) {
+            .toolbar { width: 240px; }
+            .info-panel { width: 280px; padding: 10px; }
         }
-        .axis-label {
-            position: absolute;
-            font-size: 11px;
-            font-weight: 600;
-            background: rgba(10,10,14,0.7);
-            backdrop-filter: blur(2px);
-            padding: 2px 5px;
-            border-radius: 10px;
-            font-family: monospace;
-        }
-
         @media (max-width: 768px) {
-            body {
-                overflow: hidden;
-                touch-action: none;
-            }
-            .toolbar {
-                position: fixed;
-                bottom: 12px;
-                left: 12px;
-                right: 12px;
-                top: auto;
-                width: auto;
-                background: rgba(17, 18, 22, 0.92);
-                backdrop-filter: blur(12px);
-                border-radius: 24px;
-                padding: 5px 10px;
-                display: flex;
-                flex-direction: row;
-                justify-content: space-around;
-                align-items: center;
-                gap: 4px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-                border: 1px solid rgba(249,115,22,0.6);
-                z-index: 200;
-            }
-            .tool-btn {
-                width: auto;
-                padding: 6px 0;
-                margin: 0;
-                background: transparent;
-                border: none;
-                border-radius: 28px;
-                justify-content: center;
-                flex: 1;
-            }
-            .tool-btn span:not(.btn-icon) {
-                display: none;
-            }
-            .tool-btn .btn-icon {
-                font-size: 1.4rem;
-                width: auto;
-                margin: 0;
-            }
-            .tool-btn:hover {
-                background: rgba(249,115,22,0.2);
-                transform: none;
-            }
-            .mode-active {
-                background: rgba(249,115,22,0.4);
-                color: #f97316;
-            }
-            .new-object-btn {
-                border: none;
-                background: transparent;
-            }
-            .new-object-btn .right-badge {
-                display: none;
-            }
-            .status-area {
-                display: none;
-            }
-            .canvas-area {
-                height: 100vh;
-                align-items: center;
-            }
-            .container {
-                padding: 3px;
-                border-radius: 10px;
-            }
-            canvas {
-                border-width: 0.5px;
-            }
-            .axis-label {
-                font-size: 7px;
-                padding: 1px 3px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .tool-btn .btn-icon {
-                font-size: 1.2rem;
-            }
-            .toolbar {
-                border-radius: 20px;
-                padding: 4px 8px;
-            }
+            .toolbar { position: fixed; bottom: 12px; left: 12px; right: auto; top: auto; width: auto; background: rgba(23,26,31,0.96); backdrop-filter: blur(0px); border-radius: 2px; padding: 5px 10px; display: flex; flex-direction: row; justify-content: space-around; gap: 4px; z-index: 200; border: 1px solid var(--metal-border); }
+            .tool-btn { width: auto; padding: 6px 0; margin: 0; background: transparent; border: none; justify-content: center; flex: 1; }
+            .tool-btn span:not(.btn-icon) { display: none; }
+            .tool-btn .btn-icon { font-size: 1.4rem; width: auto; }
+            .mode-active { background: rgba(255,85,0,0.3); color: var(--orange-pulse); }
+            .new-object-btn .right-badge { display: none; }
+            .info-panel { display: none; }
+            #threeContainer { width: 100%; height: auto; }
         }
     </style>
 </head>
@@ -270,7 +270,29 @@
     <button id="lineBtn" class="tool-btn mode-active"><span class="btn-icon">⎯</span><span>Отрезок</span></button>
     <button id="rectBtn" class="tool-btn"><span class="btn-icon">□</span><span>Прямоугольник</span></button>
     <button id="ellipseBtn" class="tool-btn"><span class="btn-icon">○</span><span>Эллипс</span></button>
-    <button id="newObjectBtn" class="tool-btn new-object-btn"><span class="btn-icon">+</span><span>Новый объект</span><div class="right-badge"><div id="colorIndicator" class="color-indicator" style="background-color: #f97316;"></div></div></button>
+    <button id="planeBtn" class="tool-btn"><span class="btn-icon">△</span><span>Плоскость (3 точки)</span></button>
+    <button id="newObjectBtn" class="tool-btn new-object-btn"><span class="btn-icon">+</span><span>Новый объект</span><div class="right-badge"><div id="colorIndicator" class="color-indicator" style="background-color: #ff5500;"></div></div></button>
+    <!-- НОВАЯ КНОПКА: ВКЛ/ВЫКЛ ЛИНИЙ СВЯЗИ -->
+    <button id="toggleLinesBtn" class="tool-btn" style="margin-top: 8px; border-color: #00aaff;"><span class="btn-icon">🔗</span><span>Линии связи</span><div class="right-badge"><span id="linesToggleStatus" style="font-size: 0.7rem; color: #00aaff;">ВКЛ</span></div></button>
+</div>
+
+<div class="info-panel">
+    <div class="info-card">
+        <div class="info-title">📐 КЛАССИФИКАЦИЯ ОТРЕЗКА</div>
+        <div class="info-content">
+            <div><span class="class-type" id="lineType">—</span></div>
+            <div class="class-desc" id="lineDesc">Нарисуйте отрезок</div>
+            <div id="lineVector" style="font-size: 10px; color: #2a9d8f; margin-top: 6px;"></div>
+        </div>
+    </div>
+    <div class="info-card">
+        <div class="info-title">⬟ КЛАССИФИКАЦИЯ ПЛОСКОСТИ (треугольник)</div>
+        <div class="info-content">
+            <div><span class="class-type" id="planeType">—</span></div>
+            <div class="class-desc" id="planeDesc">Постройте треугольник</div>
+            <div id="planeNormal" style="font-size: 10px; color: #2a9d8f; margin-top: 6px;"></div>
+        </div>
+    </div>
 </div>
 
 <div class="canvas-area">
@@ -279,506 +301,730 @@
             <canvas id="frontal" width="340" height="340"></canvas>
             <canvas id="horizontal" width="340" height="340"></canvas>
         </div>
-        <div>
+        <div id="profileColumn">
             <canvas id="profile" width="340" height="340"></canvas>
+            <div id="threeContainer"></div>
         </div>
         <div class="common-axes" id="commonAxes"></div>
     </div>
 </div>
 
 <script>
-    let CANVAS_SIZE = 340;
-    let GRID_STEP = 20;
-    const TOLERANCE = 8;
-    const PRIMITIVE_TYPES = { LINE: 'line', RECT: 'rect', ELLIPSE: 'ellipse' };
-    
-    let currentPrimitive = PRIMITIVE_TYPES.LINE;
-    const canvasV = document.getElementById('frontal');
-    const canvasH = document.getElementById('horizontal');
-    const canvasP = document.getElementById('profile');
-    let ctxV = canvasV.getContext('2d');
-    let ctxH = canvasH.getContext('2d');
-    let ctxP = canvasP.getContext('2d');
-    const container = document.getElementById('mainContainer');
-    const axesContainer = document.getElementById('commonAxes');
-
-    let spatialObjects = [];
-    let activeObject = null;
-    let drawing = false;
-    let startX, startY;
-    let currentCanvas = null;
-    let currentPlane = null;
-    let previewLine = null;
-    let currentColor = '#f97316';
-    let isNewObjectMode = false;
-    let currentPointKey = null;
-
-    let auxConstraints = { H: { minX: null, maxX: null, minY: null, maxY: null }, V: { minX: null, maxX: null, minY: null, maxY: null }, P: { minX: null, maxX: null, minY: null, maxY: null } };
-    let startConstraintType = null, startConstraintValue = null;
-    const colorPalette = ['#f97316', '#ff4d4d', '#4caf50', '#ffb347', '#6a4e9b', '#2c9f9f', '#ff6b6b', '#e879f9'];
-    let colorIndex = 0;
-    
-
-    let constraintsDirty = true;
-    let redrawScheduled = false;
-
-    function markConstraintsDirty() {
-        constraintsDirty = true;
-    }
-
-    function scheduleRedraw() {
-        if (!redrawScheduled) {
-            redrawScheduled = true;
-            requestAnimationFrame(() => {
-                redrawScheduled = false;
-                updateProjections();
+    (function(){
+        // ---------- ПАРАМЕТРЫ (полностью сохранённая логика APLV2) ----------
+        let CANVAS_SIZE = 340;
+        const BASE_GRID_STEP = 20;
+        let GRID_STEP = BASE_GRID_STEP;
+        const EPS = 1e-9;
+        const TOLERANCE = 6;
+        const PRIMITIVE_TYPES = { LINE: 'line', RECT: 'rect', ELLIPSE: 'ellipse', PLANE: 'plane' };
+        let currentPrimitive = PRIMITIVE_TYPES.LINE;
+        
+        const canvasV = document.getElementById('frontal');
+        const canvasH = document.getElementById('horizontal');
+        const canvasP = document.getElementById('profile');
+        let ctxV = canvasV.getContext('2d');
+        let ctxH = canvasH.getContext('2d');
+        let ctxP = canvasP.getContext('2d');
+        const container = document.getElementById('mainContainer');
+        const axesContainer = document.getElementById('commonAxes');
+        
+        let spatialObjects = [];
+        let activeObject = null;
+        let drawing = false;
+        let startX, startY;
+        let currentCanvas = null;
+        let currentPlane = null;
+        let previewLine = null;
+        let currentColor = '#ff5500';
+        let isNewObjectMode = false;
+        let currentPointKey = null;
+        
+        let auxConstraints = { H: { minX: null, maxX: null, minY: null, maxY: null }, V: { minX: null, maxX: null, minY: null, maxY: null }, P: { minX: null, maxX: null, minY: null, maxY: null } };
+        let startConstraintType = null, startConstraintValue = null;
+        const colorPalette = ['#ff5500', '#ff4d4d', '#4caf50', '#ffb347', '#6a4e9b', '#2c9f9f', '#ff6b6b', '#e879f9'];
+        let colorIndex = 0;
+        let constraintsDirty = true;
+        let redrawScheduled = false;
+        
+        let planeTempVertex = { x: null, y: null, z: null };
+        let planeBuilding = false;
+        let planeStartPlane = null;
+        let planeStartCoords = null;
+        let planeMousePos = null;
+        
+        // ====================== THREE.JS (из base.html) ======================
+        let scene, camera, renderer;
+        let threeMeshes = [];
+        const UNIT_SCALE = 6.3;
+        
+        function toGridUnits(worldX, worldY, worldZ) {
+            if (worldX === null || worldY === null || worldZ === null) return null;
+            let x = (CANVAS_SIZE - worldX) / GRID_STEP;
+            let y = (CANVAS_SIZE - worldY) / GRID_STEP;
+            let z = worldZ / GRID_STEP;
+            return { x: Math.round(x), y: Math.round(y), z: Math.round(z) };
+        }
+        
+        function worldTo3D(point) {
+            if (!point || point.x === null || point.y === null || point.z === null) return null;
+            const grid = toGridUnits(point.x, point.y, point.z);
+            if (!grid) return null;
+            return new THREE.Vector3(grid.x * UNIT_SCALE, grid.z * UNIT_SCALE, grid.y * UNIT_SCALE);
+        }
+        
+        function createCylinderBetweenPoints(start3D, end3D, radius, color) {
+            const direction = new THREE.Vector3().subVectors(end3D, start3D);
+            const length = direction.length();
+            if (length < 0.5) {
+                const sphere = new THREE.Mesh(new THREE.SphereGeometry(radius*2, 16, 16),
+                    new THREE.MeshPhongMaterial({color: color}));
+                sphere.position.copy(start3D);
+                return sphere;
+            }
+            const center = new THREE.Vector3().addVectors(start3D, end3D).multiplyScalar(0.5);
+            const cylinder = new THREE.Mesh(
+                new THREE.CylinderGeometry(radius, radius, length, 16),
+                new THREE.MeshPhongMaterial({color: color, shininess: 25})
+            );
+            cylinder.position.copy(center);
+            cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), direction.clone().normalize());
+            return cylinder;
+        }
+        
+        function createPlaneMesh(points, color) {
+            if (!points || points.length !== 3) return null;
+            const p1 = worldTo3D(points[0]);
+            const p2 = worldTo3D(points[1]);
+            const p3 = worldTo3D(points[2]);
+            if (!p1 || !p2 || !p3) return null;
+            const geometry = new THREE.BufferGeometry();
+            const vertices = new Float32Array([
+                p1.x, p1.y, p1.z,
+                p2.x, p2.y, p2.z,
+                p3.x, p3.y, p3.z
+            ]);
+            geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+            geometry.setIndex([0,1,2]);
+            geometry.computeVertexNormals();
+            const material = new THREE.MeshPhongMaterial({
+                color: color,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.45,
+                emissive: 0x000000
+            });
+            const mesh = new THREE.Mesh(geometry, material);
+            // Добавим каркас для чёткости
+            const edgesGeo = new THREE.EdgesGeometry(geometry);
+            const edgesMat = new THREE.LineBasicMaterial({ color: color, linewidth: 1 });
+            const wireframe = new THREE.LineSegments(edgesGeo, edgesMat);
+            mesh.add(wireframe);
+            return mesh;
+        }
+        
+        function refresh3D() {
+            if (!scene) return;
+            threeMeshes.forEach(m => { scene.remove(m); if(m.geometry) m.geometry.dispose(); if(m.material) m.material.dispose(); });
+            threeMeshes = [];
+        
+            spatialObjects.forEach(obj => {
+                if (!isObjectComplete(obj)) return;
+                if (obj.primitive === PRIMITIVE_TYPES.PLANE) {
+                    const mesh = createPlaneMesh(obj.points, obj.color);
+                    if (mesh) {
+                        scene.add(mesh);
+                        threeMeshes.push(mesh);
+                        // добавим сферы в вершинах для наглядности
+                        obj.points.forEach(p => {
+                            const pt3 = worldTo3D(p);
+                            if (pt3) {
+                                const sphereGeo = new THREE.SphereGeometry(2.2, 12, 12);
+                                const sphereMat = new THREE.MeshPhongMaterial({ color: obj.color, emissive: 0x331100 });
+                                const sphere = new THREE.Mesh(sphereGeo, sphereMat);
+                                sphere.position.copy(pt3);
+                                scene.add(sphere);
+                                threeMeshes.push(sphere);
+                            }
+                        });
+                    }
+                    return;
+                }
+                const s3 = worldTo3D(obj.start);
+                const e3 = worldTo3D(obj.end);
+                if (!s3 || !e3) return;
+        
+                let mesh = null;
+                if (obj.primitive === PRIMITIVE_TYPES.LINE) {
+                    mesh = createCylinderBetweenPoints(s3, e3, 2.8, obj.color);
+                } else if (obj.primitive === PRIMITIVE_TYPES.RECT) {
+                    const gs = toGridUnits(obj.start.x, obj.start.y, obj.start.z);
+                    const ge = toGridUnits(obj.end.x, obj.end.y, obj.end.z);
+                    const cx = ((gs.x + ge.x)/2) * UNIT_SCALE;
+                    const cy = ((gs.z + ge.z)/2) * UNIT_SCALE;
+                    const cz = ((gs.y + ge.y)/2) * UNIT_SCALE;
+                    const sx = Math.max(Math.abs(gs.x - ge.x) * UNIT_SCALE, 5);
+                    const sy = Math.max(Math.abs(gs.z - ge.z) * UNIT_SCALE, 5);
+                    const sz = Math.max(Math.abs(gs.y - ge.y) * UNIT_SCALE, 5);
+                    mesh = new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz),
+                        new THREE.MeshPhongMaterial({color: obj.color, transparent: true, opacity: 0.8}));
+                    mesh.position.set(cx, cy, cz);
+                } else if (obj.primitive === PRIMITIVE_TYPES.ELLIPSE) {
+                    const gs = toGridUnits(obj.start.x, obj.start.y, obj.start.z);
+                    const ge = toGridUnits(obj.end.x, obj.end.y, obj.end.z);
+                    const cx = ((gs.x + ge.x)/2) * UNIT_SCALE;
+                    const cy = ((gs.z + ge.z)/2) * UNIT_SCALE;
+                    const cz = ((gs.y + ge.y)/2) * UNIT_SCALE;
+                    const rx = Math.max(Math.abs(gs.x - ge.x)/2 * UNIT_SCALE, 6);
+                    const ry = Math.max(Math.abs(gs.z - ge.z)/2 * UNIT_SCALE, 6);
+                    const rz = Math.max(Math.abs(gs.y - ge.y)/2 * UNIT_SCALE, 6);
+                    mesh = new THREE.Mesh(new THREE.SphereGeometry(1, 32, 24),
+                        new THREE.MeshPhongMaterial({color: obj.color, transparent: true, opacity: 0.75}));
+                    mesh.position.set(cx, cy, cz);
+                    mesh.scale.set(rx, ry, rz);
+                }
+                if (mesh) {
+                    scene.add(mesh);
+                    threeMeshes.push(mesh);
+                }
             });
         }
-    }
-
-    function canvasToWorld(xCanvas, yCanvas, plane) {
-        if (plane === 'P') return { x: CANVAS_SIZE - xCanvas, y: CANVAS_SIZE - yCanvas };
-        else return { x: xCanvas, y: CANVAS_SIZE - yCanvas };
-    }
-    function worldToCanvas(xWorld, yWorld, plane) {
-        if (plane === 'P') return { x: CANVAS_SIZE - xWorld, y: CANVAS_SIZE - yWorld };
-        else return { x: xWorld, y: CANVAS_SIZE - yWorld };
-    }
-    function snapToGrid(value) {
-        return Math.round(value / GRID_STEP) * GRID_STEP;
-    }
-    function simpleSnap(xWorld, yWorld, plane) {
-        let sx = snapToGrid(xWorld), sy = snapToGrid(yWorld);
-        const cons = auxConstraints[plane];
-        if (cons.minX !== null && Math.abs(sx - cons.minX) <= TOLERANCE) sx = cons.minX;
-        if (cons.maxX !== null && Math.abs(sx - cons.maxX) <= TOLERANCE) sx = cons.maxX;
-        if (cons.minY !== null && Math.abs(sy - cons.minY) <= TOLERANCE) sy = cons.minY;
-        if (cons.maxY !== null && Math.abs(sy - cons.maxY) <= TOLERANCE) sy = cons.maxY;
-        return { x: sx, y: sy };
-    }
-    function getHProjection(obj) { return { start: { x: obj.start.x, y: obj.start.y }, end: { x: obj.end.x, y: obj.end.y } }; }
-    function getVProjection(obj) { return { start: { x: obj.start.x, y: obj.start.z }, end: { x: obj.end.x, y: obj.end.z } }; }
-    function getPProjection(obj) { return { start: { x: obj.start.y, y: obj.start.z }, end: { x: obj.end.y, y: obj.end.z } }; }
-    function isObjectComplete(obj) { return obj.start.x !== null && obj.start.y !== null && obj.start.z !== null && obj.end.x !== null && obj.end.y !== null && obj.end.z !== null; }
-    function getIncompleteProjections(obj) {
-        const incomplete = [];
-        const hasX = obj.start.x !== null && obj.end.x !== null;
-        const hasY = obj.start.y !== null && obj.end.y !== null;
-        const hasZ = obj.start.z !== null && obj.end.z !== null;
-        if (!(hasX && hasY)) incomplete.push('H');
-        if (!(hasX && hasZ)) incomplete.push('V');
-        if (!(hasY && hasZ)) incomplete.push('P');
-        return incomplete;
-    }
-    function assignCoordinates(obj, plane, xVal, yVal, pointKey) {
-        if (!pointKey) pointKey = 'start';
-        const target = obj[pointKey];
-        switch (plane) {
-            case 'H': if (target.x === null) target.x = xVal; if (target.y === null) target.y = yVal; break;
-            case 'V': if (target.x === null) target.x = xVal; if (target.z === null) target.z = yVal; break;
-            case 'P': if (target.y === null) target.y = xVal; if (target.z === null) target.z = yVal; break;
-        }
-        markConstraintsDirty();
-    }
-    function updateConstraints() {
-        if (!constraintsDirty) return;
-        for (let p in auxConstraints) auxConstraints[p] = { minX: null, maxX: null, minY: null, maxY: null };
-        if (!activeObject) {
-            constraintsDirty = false;
-            return;
-        }
-        const incomplete = getIncompleteProjections(activeObject);
-        if (incomplete.includes('H')) {
-            if (activeObject.start.x !== null && activeObject.end.x !== null) { auxConstraints.H.minX = Math.min(activeObject.start.x, activeObject.end.x); auxConstraints.H.maxX = Math.max(activeObject.start.x, activeObject.end.x); }
-            if (activeObject.start.y !== null && activeObject.end.y !== null) { auxConstraints.H.minY = Math.min(activeObject.start.y, activeObject.end.y); auxConstraints.H.maxY = Math.max(activeObject.start.y, activeObject.end.y); }
-        }
-        if (incomplete.includes('V')) {
-            if (activeObject.start.x !== null && activeObject.end.x !== null) { auxConstraints.V.minX = Math.min(activeObject.start.x, activeObject.end.x); auxConstraints.V.maxX = Math.max(activeObject.start.x, activeObject.end.x); }
-            if (activeObject.start.z !== null && activeObject.end.z !== null) { auxConstraints.V.minY = Math.min(activeObject.start.z, activeObject.end.z); auxConstraints.V.maxY = Math.max(activeObject.start.z, activeObject.end.z); }
-        }
-        if (incomplete.includes('P')) {
-            if (activeObject.start.y !== null && activeObject.end.y !== null) { auxConstraints.P.minX = Math.min(activeObject.start.y, activeObject.end.y); auxConstraints.P.maxX = Math.max(activeObject.start.y, activeObject.end.y); }
-            if (activeObject.start.z !== null && activeObject.end.z !== null) { auxConstraints.P.minY = Math.min(activeObject.start.z, activeObject.end.z); auxConstraints.P.maxY = Math.max(activeObject.start.z, activeObject.end.z); }
-        }
-        constraintsDirty = false;
-    }
-    function isOnBoundary(xWorld, yWorld, plane) {
-        const cons = auxConstraints[plane];
-        if (cons.minX !== null && Math.abs(xWorld - cons.minX) <= TOLERANCE) return { onBoundary: true, type: 'vertical', value: cons.minX };
-        if (cons.maxX !== null && Math.abs(xWorld - cons.maxX) <= TOLERANCE) return { onBoundary: true, type: 'vertical', value: cons.maxX };
-        if (cons.minY !== null && Math.abs(yWorld - cons.minY) <= TOLERANCE) return { onBoundary: true, type: 'horizontal', value: cons.minY };
-        if (cons.maxY !== null && Math.abs(yWorld - cons.maxY) <= TOLERANCE) return { onBoundary: true, type: 'horizontal', value: cons.maxY };
-        return { onBoundary: false };
-    }
-    function findPointByCoordinate(plane, coordType, value) {
-        if (!activeObject) return null;
-        let startVal = null, endVal = null;
-        if (plane === 'H') { if (coordType === 'vertical') { startVal = activeObject.start.x; endVal = activeObject.end.x; } else { startVal = activeObject.start.y; endVal = activeObject.end.y; } }
-        else if (plane === 'V') { if (coordType === 'vertical') { startVal = activeObject.start.x; endVal = activeObject.end.x; } else { startVal = activeObject.start.z; endVal = activeObject.end.z; } }
-        else if (plane === 'P') { if (coordType === 'vertical') { startVal = activeObject.start.y; endVal = activeObject.end.y; } else { startVal = activeObject.start.z; endVal = activeObject.end.z; } }
-        if (startVal !== null && Math.abs(startVal - value) <= TOLERANCE) return 'start';
-        if (endVal !== null && Math.abs(endVal - value) <= TOLERANCE) return 'end';
-        return null;
-    }
-    function checkDegenerateProjection(plane) {
-        const cons = auxConstraints[plane];
-        const verticalDegenerate = cons.minX !== null && cons.maxX !== null && Math.abs(cons.minX - cons.maxX) <= TOLERANCE;
-        const horizontalDegenerate = cons.minY !== null && cons.maxY !== null && Math.abs(cons.minY - cons.maxY) <= TOLERANCE;
-        if (verticalDegenerate && cons.minY === null && cons.maxY === null) return { isDegenerate: true, type: 'vertical', value: cons.minX };
-        if (horizontalDegenerate && cons.minX === null && cons.maxX === null) return { isDegenerate: true, type: 'horizontal', value: cons.minY };
-        if (verticalDegenerate && horizontalDegenerate) return { isDegenerate: true, type: 'point', valueX: cons.minX, valueY: cons.minY };
-        return { isDegenerate: false };
-    }
-
-
-    function drawGrid(ctx) {
-        ctx.save();
-        ctx.beginPath();
-        ctx.strokeStyle = '#2a2c34';
-        ctx.lineWidth = 0.5;
-        for (let x = 0; x <= CANVAS_SIZE; x += GRID_STEP) {
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, CANVAS_SIZE);
-        }
-        for (let y = 0; y <= CANVAS_SIZE; y += GRID_STEP) {
-            ctx.moveTo(0, y);
-            ctx.lineTo(CANVAS_SIZE, y);
-        }
-        ctx.stroke();
-        ctx.restore();
-    }
-    
-    function drawShapeOnCanvas(ctx, start, end, color, type, plane) {
-        const p1 = worldToCanvas(start.x, start.y, plane);
-        const p2 = worldToCanvas(end.x, end.y, plane);
-        if (Math.abs(start.x - end.x) <= TOLERANCE && Math.abs(start.y - end.y) <= TOLERANCE) {
-            ctx.beginPath(); ctx.fillStyle = color; ctx.arc(p1.x, p1.y, 3, 0, Math.PI*2); ctx.fill();
-            ctx.beginPath(); ctx.fillStyle = '#0b0b0f'; ctx.arc(p1.x, p1.y, 1.5, 0, Math.PI*2); ctx.fill();
-            return;
-        }
-        const x = Math.min(p1.x, p2.x), y = Math.min(p1.y, p2.y), w = Math.abs(p2.x-p1.x), h = Math.abs(p2.y-p1.y);
-        ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = 1.8; ctx.fillStyle = 'transparent';
-        if (type === PRIMITIVE_TYPES.LINE) { ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke(); }
-        else if (type === PRIMITIVE_TYPES.RECT) { ctx.beginPath(); ctx.rect(x,y,w,h); ctx.stroke(); }
-        else if (type === PRIMITIVE_TYPES.ELLIPSE) { ctx.beginPath(); ctx.ellipse(x+w/2, y+h/2, w/2, h/2, 0, 0, Math.PI*2); ctx.stroke(); }
-        ctx.restore();
-    }
-    function drawPreviewShape(ctx, start, end, plane) {
-        const p1 = worldToCanvas(start.x, start.y, plane);
-        const p2 = worldToCanvas(end.x, end.y, plane);
-        if (Math.abs(start.x - end.x) <= TOLERANCE && Math.abs(start.y - end.y) <= TOLERANCE) return;
-        const x = Math.min(p1.x, p2.x), y = Math.min(p1.y, p2.y), w = Math.abs(p2.x-p1.x), h = Math.abs(p2.y-p1.y);
-        ctx.save(); ctx.strokeStyle = '#ffb88c'; ctx.lineWidth = 1.6; ctx.setLineDash([8,6]); ctx.shadowBlur = 2; ctx.shadowColor = '#ffb88c';
-        if (currentPrimitive === PRIMITIVE_TYPES.LINE) { ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke(); }
-        else if (currentPrimitive === PRIMITIVE_TYPES.RECT) { ctx.beginPath(); ctx.rect(x,y,w,h); ctx.stroke(); }
-        else if (currentPrimitive === PRIMITIVE_TYPES.ELLIPSE) { ctx.beginPath(); ctx.ellipse(x+w/2, y+h/2, w/2, h/2, 0, 0, Math.PI*2); ctx.stroke(); }
-        ctx.restore();
-    }
-
-    const PEACH_SOFT = '#ffaa77';
-    function drawAuxVertical(ctx, x1, x2, plane) {
-        const p1 = worldToCanvas(x1,0,plane), p2 = worldToCanvas(x2,0,plane);
-        ctx.save(); ctx.strokeStyle = PEACH_SOFT; ctx.setLineDash([6,8]); ctx.lineWidth = 0.9;
-        ctx.beginPath(); ctx.moveTo(p1.x,0); ctx.lineTo(p1.x,CANVAS_SIZE);
-        if (Math.abs(x1-x2)>TOLERANCE) { ctx.moveTo(p2.x,0); ctx.lineTo(p2.x,CANVAS_SIZE); }
-        ctx.stroke(); ctx.restore();
-    }
-    function drawAuxHorizontal(ctx, y1, y2, plane) {
-        const p1 = worldToCanvas(0,y1,plane), p2 = worldToCanvas(0,y2,plane);
-        ctx.save(); ctx.strokeStyle = PEACH_SOFT; ctx.setLineDash([6,8]); ctx.lineWidth = 0.9;
-        ctx.beginPath(); ctx.moveTo(0,p1.y); ctx.lineTo(CANVAS_SIZE,p1.y);
-        if (Math.abs(y1-y2)>TOLERANCE) { ctx.moveTo(0,p2.y); ctx.lineTo(CANVAS_SIZE,p2.y); }
-        ctx.stroke(); ctx.restore();
-    }
-
-    function updateProjections() {
-        ctxH.clearRect(0,0,CANVAS_SIZE,CANVAS_SIZE); ctxV.clearRect(0,0,CANVAS_SIZE,CANVAS_SIZE); ctxP.clearRect(0,0,CANVAS_SIZE,CANVAS_SIZE);
-        drawGrid(ctxH); drawGrid(ctxV); drawGrid(ctxP);
-        spatialObjects.forEach(obj => {
-            if (isObjectComplete(obj)) {
-                drawShapeOnCanvas(ctxH, getHProjection(obj).start, getHProjection(obj).end, obj.color, obj.primitive, 'H');
-                drawShapeOnCanvas(ctxV, getVProjection(obj).start, getVProjection(obj).end, obj.color, obj.primitive, 'V');
-                drawShapeOnCanvas(ctxP, getPProjection(obj).start, getPProjection(obj).end, obj.color, obj.primitive, 'P');
+        
+        function initThree() {
+            const threeDiv = document.getElementById('threeContainer');
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color('#111216');
+            camera = new THREE.PerspectiveCamera(50, 1, 10, 3000);
+            camera.position.set(175, 145, 210);
+            camera.lookAt(0, 15, 0);
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(CANVAS_SIZE, CANVAS_SIZE);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            threeDiv.appendChild(renderer.domElement);
+            scene.add(new THREE.AmbientLight(0xbbbbbb, 0.85));
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            dirLight.position.set(150, 200, 140);
+            scene.add(dirLight);
+            const backLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            backLight.position.set(-100, -50, -80);
+            scene.add(backLight);
+            const grid = new THREE.GridHelper(180, 18, 0x555555, 0x333333);
+            scene.add(grid);
+            // Оси с цветами и тонкие
+            const axisRadius = 0.4;
+            const axisLength = 70;
+            const xAxisMaterial = new THREE.MeshPhongMaterial({ color: '#ff3333', emissive: '#331100', shininess: 60 });
+            const xAxisCyl = new THREE.Mesh(new THREE.CylinderGeometry(axisRadius, axisRadius, axisLength, 8), xAxisMaterial);
+            xAxisCyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(1,0,0));
+            xAxisCyl.position.set(axisLength/2, 0, 0);
+            scene.add(xAxisCyl);
+            const yAxisMaterial = new THREE.MeshPhongMaterial({ color: '#3399ff', emissive: '#113300', shininess: 60 });
+            const yAxisCyl = new THREE.Mesh(new THREE.CylinderGeometry(axisRadius, axisRadius, axisLength, 8), yAxisMaterial);
+            yAxisCyl.position.set(0, axisLength/2, 0);
+            scene.add(yAxisCyl);
+            const zAxisMaterial = new THREE.MeshPhongMaterial({ color: '#33ff33', emissive: '#001133', shininess: 60 });
+            const zAxisCyl = new THREE.Mesh(new THREE.CylinderGeometry(axisRadius, axisRadius, axisLength, 8), zAxisMaterial);
+            zAxisCyl.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,1));
+            zAxisCyl.position.set(0, 0, axisLength/2);
+            scene.add(zAxisCyl);
+            const coneRadius = 0.9;
+            const coneHeight = 3.5;
+            const xConeGeo = new THREE.ConeGeometry(coneRadius, coneHeight, 12);
+            const xCone = new THREE.Mesh(xConeGeo, xAxisMaterial);
+            xCone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(1,0,0));
+            xCone.position.set(axisLength, 0, 0);
+            scene.add(xCone);
+            const yCone = new THREE.Mesh(xConeGeo, yAxisMaterial);
+            yCone.position.set(0, axisLength, 0);
+            scene.add(yCone);
+            const zCone = new THREE.Mesh(xConeGeo, zAxisMaterial);
+            zCone.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), new THREE.Vector3(0,0,1));
+            zCone.position.set(0, 0, axisLength);
+            scene.add(zCone);
+            const originSphere = new THREE.Mesh(new THREE.SphereGeometry(0.8, 16, 16), new THREE.MeshPhongMaterial({ color: '#ffffff', emissive: '#222222' }));
+            scene.add(originSphere);
+            
+            function animate() {
+                requestAnimationFrame(animate);
+                if (renderer && scene && camera) renderer.render(scene, camera);
             }
-        });
-        if (activeObject && !isObjectComplete(activeObject)) {
+            animate();
+            let dragging = false, prevX = 0, prevY = 0;
+            const dom = renderer.domElement;
+            dom.addEventListener('mousedown', e => { dragging = true; prevX = e.clientX; prevY = e.clientY; });
+            document.addEventListener('mouseup', () => dragging = false);
+            dom.addEventListener('mousemove', e => {
+                if (!dragging) return;
+                const dx = (e.clientX - prevX) * 0.004;
+                const dy = (e.clientY - prevY) * 0.004;
+                prevX = e.clientX; prevY = e.clientY;
+                const sph = new THREE.Spherical().setFromVector3(camera.position);
+                sph.theta -= dx;
+                sph.phi = Math.max(0.2, Math.min(Math.PI - 0.2, sph.phi + dy));
+                camera.position.setFromSpherical(sph);
+                camera.lookAt(0, 15, 0);
+            });
+        }
+        
+        // ---------- ОСТАЛЬНЫЕ ФУНКЦИИ APLV2 (нетронуты, кроме scheduleRedraw и resizeCanvas) ----------
+        function snapToGrid(value) { return Math.round(value / GRID_STEP) * GRID_STEP; }
+        function canvasToWorld(xCanvas, yCanvas, plane) {
+            if (plane === 'P') return { x: CANVAS_SIZE - xCanvas, y: CANVAS_SIZE - yCanvas };
+            else return { x: xCanvas, y: CANVAS_SIZE - yCanvas };
+        }
+        function worldToCanvas(xWorld, yWorld, plane) {
+            if (plane === 'P') return { x: CANVAS_SIZE - xWorld, y: CANVAS_SIZE - yWorld };
+            else return { x: xWorld, y: CANVAS_SIZE - yWorld };
+        }
+        function snapWithConstraints(xWorld, yWorld, plane) {
+            let sx = snapToGrid(xWorld);
+            let sy = snapToGrid(yWorld);
+            const cons = auxConstraints[plane];
+            if (cons.minX !== null && Math.abs(sx - cons.minX) <= TOLERANCE) sx = cons.minX;
+            if (cons.maxX !== null && Math.abs(sx - cons.maxX) <= TOLERANCE) sx = cons.maxX;
+            if (cons.minY !== null && Math.abs(sy - cons.minY) <= TOLERANCE) sy = cons.minY;
+            if (cons.maxY !== null && Math.abs(sy - cons.maxY) <= TOLERANCE) sy = cons.maxY;
+            return { x: snapToGrid(sx), y: snapToGrid(sy) };
+        }
+        function getHProjection(obj) { return { start: { x: obj.start.x, y: obj.start.y }, end: { x: obj.end.x, y: obj.end.y } }; }
+        function getVProjection(obj) { return { start: { x: obj.start.x, y: obj.start.z }, end: { x: obj.end.x, y: obj.end.z } }; }
+        function getPProjection(obj) { return { start: { x: obj.start.y, y: obj.start.z }, end: { x: obj.end.y, y: obj.end.z } }; }
+        function isObjectComplete(obj) {
+            if (!obj) return false;
+            if (obj.primitive === PRIMITIVE_TYPES.PLANE) {
+                return obj.points && obj.points.length === 3 && obj.points.every(p => p.x !== null && p.y !== null && p.z !== null);
+            }
+            return obj.start && obj.end && obj.start.x !== null && obj.start.y !== null && obj.start.z !== null && obj.end.x !== null && obj.end.y !== null && obj.end.z !== null;
+        }
+        function getIncompleteProjections(obj) {
+            const incomplete = [];
+            const hasX = obj.start.x !== null && obj.end.x !== null;
+            const hasY = obj.start.y !== null && obj.end.y !== null;
+            const hasZ = obj.start.z !== null && obj.end.z !== null;
+            if (!(hasX && hasY)) incomplete.push('H');
+            if (!(hasX && hasZ)) incomplete.push('V');
+            if (!(hasY && hasZ)) incomplete.push('P');
+            return incomplete;
+        }
+        function assignCoordinates(obj, plane, xVal, yVal, pointKey) {
+            if (!pointKey) pointKey = 'start';
+            const target = obj[pointKey];
+            let snappedX = snapToGrid(xVal);
+            let snappedY = snapToGrid(yVal);
+            switch (plane) {
+                case 'H': if (target.x === null) target.x = snappedX; if (target.y === null) target.y = snappedY; break;
+                case 'V': if (target.x === null) target.x = snappedX; if (target.z === null) target.z = snappedY; break;
+                case 'P': if (target.y === null) target.y = snappedX; if (target.z === null) target.z = snappedY; break;
+            }
+            markConstraintsDirty();
+        }
+        function updateConstraints() {
+            if (!constraintsDirty) return;
+            for (let p in auxConstraints) auxConstraints[p] = { minX: null, maxX: null, minY: null, maxY: null };
+            if (!activeObject || activeObject.primitive === PRIMITIVE_TYPES.PLANE) { constraintsDirty = false; return; }
             const incomplete = getIncompleteProjections(activeObject);
-            if (!incomplete.includes('H')) drawShapeOnCanvas(ctxH, getHProjection(activeObject).start, getHProjection(activeObject).end, activeObject.color, activeObject.primitive, 'H');
-            if (!incomplete.includes('V')) drawShapeOnCanvas(ctxV, getVProjection(activeObject).start, getVProjection(activeObject).end, activeObject.color, activeObject.primitive, 'V');
-            if (!incomplete.includes('P')) drawShapeOnCanvas(ctxP, getPProjection(activeObject).start, getPProjection(activeObject).end, activeObject.color, activeObject.primitive, 'P');
-            if (incomplete.includes('V') && !incomplete.includes('H')) { const h = getHProjection(activeObject); drawAuxVertical(ctxV, h.start.x, h.end.x, 'V'); }
-            if (incomplete.includes('H') && !incomplete.includes('V')) { const v = getVProjection(activeObject); drawAuxVertical(ctxH, v.start.x, v.end.x, 'H'); }
-            if (incomplete.includes('P') && !incomplete.includes('V')) { const v = getVProjection(activeObject); drawAuxHorizontal(ctxP, v.start.y, v.end.y, 'P'); }
-            if (incomplete.includes('V') && !incomplete.includes('P')) { const p = getPProjection(activeObject); drawAuxHorizontal(ctxV, p.start.y, p.end.y, 'V'); }
-            if (incomplete.includes('P') && !incomplete.includes('H')) { const h = getHProjection(activeObject); drawAuxVertical(ctxP, h.start.y, h.end.y, 'P'); }
-            if (incomplete.includes('H') && !incomplete.includes('P')) { const p = getPProjection(activeObject); drawAuxHorizontal(ctxH, p.start.x, p.end.x, 'H'); }
-        }
-        if (previewLine && currentCanvas) {
-            const ctxMap = { horizontal: ctxH, frontal: ctxV, profile: ctxP };
-            const planeMap = { horizontal: 'H', frontal: 'V', profile: 'P' };
-            const ctx = ctxMap[currentCanvas.id];
-            const plane = planeMap[currentCanvas.id];
-            if (ctx) drawPreviewShape(ctx, previewLine.start, previewLine.end, plane);
-        }
-    }
-
-    function getPointerPos(canvas, e) {
-        const rect = canvas.getBoundingClientRect();
-        let clientX, clientY;
-        if (e.touches && e.touches.length) {
-            clientX = e.touches[0].clientX;
-            clientY = e.touches[0].clientY;
-        } else if (e.changedTouches && e.changedTouches.length) {
-            clientX = e.changedTouches[0].clientX;
-            clientY = e.changedTouches[0].clientY;
-        } else {
-            clientX = e.clientX;
-            clientY = e.clientY;
-        }
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-        return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
-    }
-
-    function startDrawingGeneric(e, canvas, planeId) {
-        e.preventDefault();
-        const pos = getPointerPos(canvas, e);
-        const world = canvasToWorld(pos.x, pos.y, planeId);
-        let { x, y } = simpleSnap(world.x, world.y, planeId);
-        if (!activeObject || isNewObjectMode) {
-            activeObject = { id: Date.now()+'-'+Math.random(), start:{x:null,y:null,z:null}, end:{x:null,y:null,z:null}, color: currentColor, primitive: currentPrimitive };
-            isNewObjectMode = false;
-            markConstraintsDirty();
-        }
-        updateConstraints(); 
-        const degenerate = checkDegenerateProjection(planeId);
-        if (degenerate.isDegenerate) {
-            let px,py;
-            if (degenerate.type === 'vertical') { px = degenerate.value; py = y; }
-            else if (degenerate.type === 'horizontal') { px = x; py = degenerate.value; }
-            else { px = degenerate.valueX; py = degenerate.valueY; }
-            let pk = 'start';
-            if (activeObject.start.x !== null && activeObject.start.y !== null && activeObject.start.z !== null) pk = 'end';
-            assignCoordinates(activeObject, planeId, px, py, pk);
-            if (isObjectComplete(activeObject)) {
-                spatialObjects.push(activeObject);
-                activeObject = null;
-                markConstraintsDirty();
+            if (incomplete.includes('H')) {
+                if (activeObject.start.x !== null && activeObject.end.x !== null) { auxConstraints.H.minX = Math.min(activeObject.start.x, activeObject.end.x); auxConstraints.H.maxX = Math.max(activeObject.start.x, activeObject.end.x); }
+                if (activeObject.start.y !== null && activeObject.end.y !== null) { auxConstraints.H.minY = Math.min(activeObject.start.y, activeObject.end.y); auxConstraints.H.maxY = Math.max(activeObject.start.y, activeObject.end.y); }
             }
-            scheduleRedraw();
-            return;
-        }
-        const boundary = isOnBoundary(x, y, planeId);
-        const hasConstraints = auxConstraints[planeId].minX !== null || auxConstraints[planeId].maxX !== null || auxConstraints[planeId].minY !== null || auxConstraints[planeId].maxY !== null;
-        if (!boundary.onBoundary && hasConstraints) return;
-        let pointKey = null;
-        if (boundary.onBoundary && boundary.type) pointKey = findPointByCoordinate(planeId, boundary.type, boundary.value);
-        drawing = true;
-        startX = x; startY = y;
-        currentCanvas = canvas;
-        currentPlane = planeId;
-        startConstraintType = boundary.type;
-        startConstraintValue = boundary.value;
-        currentPointKey = pointKey;
-        previewLine = null;
-    }
-
-    function moveGeneric(e) {
-        if (!drawing || !currentCanvas) return;
-        e.preventDefault();
-        const pos = getPointerPos(currentCanvas, e);
-        const plane = currentPlane;
-        const world = canvasToWorld(pos.x, pos.y, plane);
-        const snapped = simpleSnap(world.x, world.y, plane);
-        previewLine = { start: { x: startX, y: startY }, end: { x: snapped.x, y: snapped.y } };
-        scheduleRedraw(); 
-    }
-
-    function endDrawingGeneric(e) {
-        if (!drawing || !currentCanvas) return;
-        e.preventDefault();
-        const canvas = currentCanvas;
-        const planeId = currentPlane;
-        const pos = getPointerPos(canvas, e);
-        const world = canvasToWorld(pos.x, pos.y, planeId);
-        let { x, y } = simpleSnap(world.x, world.y, planeId);
-        updateConstraints(); // актуальные границы
-        const hasConstraints = auxConstraints[planeId].minX !== null || auxConstraints[planeId].maxX !== null || auxConstraints[planeId].minY !== null || auxConstraints[planeId].maxY !== null;
-        if (!hasConstraints) {
-            assignCoordinates(activeObject, planeId, startX, startY, 'start');
-            assignCoordinates(activeObject, planeId, x, y, 'end');
-            drawing = false; previewLine = null; currentCanvas = null; currentPlane = null;
-            if (isObjectComplete(activeObject)) {
-                spatialObjects.push(activeObject);
-                activeObject = null;
-                markConstraintsDirty();
+            if (incomplete.includes('V')) {
+                if (activeObject.start.x !== null && activeObject.end.x !== null) { auxConstraints.V.minX = Math.min(activeObject.start.x, activeObject.end.x); auxConstraints.V.maxX = Math.max(activeObject.start.x, activeObject.end.x); }
+                if (activeObject.start.z !== null && activeObject.end.z !== null) { auxConstraints.V.minY = Math.min(activeObject.start.z, activeObject.end.z); auxConstraints.V.maxY = Math.max(activeObject.start.z, activeObject.end.z); }
             }
-            scheduleRedraw();
-            return;
+            if (incomplete.includes('P')) {
+                if (activeObject.start.y !== null && activeObject.end.y !== null) { auxConstraints.P.minX = Math.min(activeObject.start.y, activeObject.end.y); auxConstraints.P.maxX = Math.max(activeObject.start.y, activeObject.end.y); }
+                if (activeObject.start.z !== null && activeObject.end.z !== null) { auxConstraints.P.minY = Math.min(activeObject.start.z, activeObject.end.z); auxConstraints.P.maxY = Math.max(activeObject.start.z, activeObject.end.z); }
+            }
+            constraintsDirty = false;
         }
-        const cons = auxConstraints[planeId];
-        let endBoundary = null;
-        if (startConstraintType === 'vertical') {
-            if (cons.minX !== null && Math.abs(x - cons.minX) <= TOLERANCE && Math.abs(cons.minX - startConstraintValue) > TOLERANCE) endBoundary = { onBoundary: true, type: 'vertical', value: cons.minX };
-            else if (cons.maxX !== null && Math.abs(x - cons.maxX) <= TOLERANCE && Math.abs(cons.maxX - startConstraintValue) > TOLERANCE) endBoundary = { onBoundary: true, type: 'vertical', value: cons.maxX };
-        } else if (startConstraintType === 'horizontal') {
-            if (cons.minY !== null && Math.abs(y - cons.minY) <= TOLERANCE && Math.abs(cons.minY - startConstraintValue) > TOLERANCE) endBoundary = { onBoundary: true, type: 'horizontal', value: cons.minY };
-            else if (cons.maxY !== null && Math.abs(y - cons.maxY) <= TOLERANCE && Math.abs(cons.maxY - startConstraintValue) > TOLERANCE) endBoundary = { onBoundary: true, type: 'horizontal', value: cons.maxY };
+        function isOnBoundary(xWorld, yWorld, plane) {
+            const cons = auxConstraints[plane];
+            if (cons.minX !== null && Math.abs(xWorld - cons.minX) <= TOLERANCE) return { onBoundary: true, type: 'vertical', value: cons.minX };
+            if (cons.maxX !== null && Math.abs(xWorld - cons.maxX) <= TOLERANCE) return { onBoundary: true, type: 'vertical', value: cons.maxX };
+            if (cons.minY !== null && Math.abs(yWorld - cons.minY) <= TOLERANCE) return { onBoundary: true, type: 'horizontal', value: cons.minY };
+            if (cons.maxY !== null && Math.abs(yWorld - cons.maxY) <= TOLERANCE) return { onBoundary: true, type: 'horizontal', value: cons.maxY };
+            return { onBoundary: false };
         }
-        if (!endBoundary) return;
-        let endPointKey = findPointByCoordinate(planeId, endBoundary.type, endBoundary.value);
-        if (!currentPointKey) currentPointKey = 'start';
-        if (!endPointKey) endPointKey = (currentPointKey === 'start') ? 'end' : 'start';
-        let finalX = (endBoundary.type === 'vertical') ? endBoundary.value : x;
-        let finalY = (endBoundary.type === 'horizontal') ? endBoundary.value : y;
-        assignCoordinates(activeObject, planeId, startX, startY, currentPointKey);
-        assignCoordinates(activeObject, planeId, finalX, finalY, endPointKey);
-        if (isObjectComplete(activeObject)) {
-            spatialObjects.push(activeObject);
-            activeObject = null;
-            markConstraintsDirty();
+        function findPointByCoordinate(plane, coordType, value) {
+            if (!activeObject) return null;
+            let startVal = null, endVal = null;
+            if (plane === 'H') { if (coordType === 'vertical') { startVal = activeObject.start.x; endVal = activeObject.end.x; } else { startVal = activeObject.start.y; endVal = activeObject.end.y; } }
+            else if (plane === 'V') { if (coordType === 'vertical') { startVal = activeObject.start.x; endVal = activeObject.end.x; } else { startVal = activeObject.start.z; endVal = activeObject.end.z; } }
+            else if (plane === 'P') { if (coordType === 'vertical') { startVal = activeObject.start.y; endVal = activeObject.end.y; } else { startVal = activeObject.start.z; endVal = activeObject.end.z; } }
+            if (startVal !== null && Math.abs(startVal - value) <= TOLERANCE) return 'start';
+            if (endVal !== null && Math.abs(endVal - value) <= TOLERANCE) return 'end';
+            return null;
         }
-        drawing = false; previewLine = null; currentCanvas = null; currentPlane = null;
-        startConstraintType = null; startConstraintValue = null; currentPointKey = null;
-        scheduleRedraw();
-    }
-
-    function attachEvents() {
-        const handlers = [
-            { canvas: canvasH, plane: 'H' },
-            { canvas: canvasV, plane: 'V' },
-            { canvas: canvasP, plane: 'P' }
-        ];
-        handlers.forEach(({ canvas, plane }) => {
-            canvas.addEventListener('mousedown', (e) => startDrawingGeneric(e, canvas, plane));
-            canvas.addEventListener('mouseup', (e) => endDrawingGeneric(e));
-            canvas.addEventListener('mousemove', (e) => moveGeneric(e));
-            canvas.addEventListener('mouseleave', () => {
-                if (drawing && currentCanvas === canvas) {
-                    drawing = false; previewLine = null; currentCanvas = null; currentPlane = null;
-                    scheduleRedraw();
+        function checkDegenerateProjection(plane) {
+            const cons = auxConstraints[plane];
+            const verticalDegenerate = cons.minX !== null && cons.maxX !== null && Math.abs(cons.minX - cons.maxX) <= TOLERANCE;
+            const horizontalDegenerate = cons.minY !== null && cons.maxY !== null && Math.abs(cons.minY - cons.maxY) <= TOLERANCE;
+            if (verticalDegenerate && cons.minY === null && cons.maxY === null) return { isDegenerate: true, type: 'vertical', value: cons.minX };
+            if (horizontalDegenerate && cons.minX === null && cons.maxX === null) return { isDegenerate: true, type: 'horizontal', value: cons.minY };
+            if (verticalDegenerate && horizontalDegenerate) return { isDegenerate: true, type: 'point', valueX: cons.minX, valueY: cons.minY };
+            return { isDegenerate: false };
+        }
+        function markConstraintsDirty() { constraintsDirty = true; }
+        
+        function drawGrid(ctx) {
+            ctx.save(); ctx.beginPath(); ctx.strokeStyle = '#3a3e48'; ctx.lineWidth = 0.7;
+            for (let x = 0; x <= CANVAS_SIZE; x += GRID_STEP) { ctx.moveTo(x, 0); ctx.lineTo(x, CANVAS_SIZE); }
+            for (let y = 0; y <= CANVAS_SIZE; y += GRID_STEP) { ctx.moveTo(0, y); ctx.lineTo(CANVAS_SIZE, y); }
+            ctx.stroke();
+            ctx.fillStyle = '#232730';
+            for (let x = 0; x <= CANVAS_SIZE; x += GRID_STEP) {
+                for (let y = 0; y <= CANVAS_SIZE; y += GRID_STEP) {
+                    ctx.beginPath(); ctx.arc(x, y, 1.4, 0, Math.PI*2); ctx.fill();
+                }
+            }
+            ctx.restore();
+        }
+        
+        function drawPoint(ctx, xWorld, yWorld, plane, color, radius = 5) {
+            const canvasPt = worldToCanvas(xWorld, yWorld, plane);
+            ctx.beginPath(); ctx.fillStyle = color; ctx.arc(canvasPt.x, canvasPt.y, radius, 0, 2*Math.PI); ctx.fill();
+            ctx.beginPath(); ctx.fillStyle = '#171a1f'; ctx.arc(canvasPt.x, canvasPt.y, radius-2, 0, 2*Math.PI); ctx.fill();
+        }
+        function drawAuxVertical(ctx, x, plane) { if (x===null) return; const p = worldToCanvas(x,0,plane); ctx.save(); ctx.strokeStyle='#b53a0a'; ctx.setLineDash([6,8]); ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(p.x,0); ctx.lineTo(p.x,CANVAS_SIZE); ctx.stroke(); ctx.restore(); }
+        function drawAuxHorizontal(ctx, y, plane) { if (y===null) return; const p = worldToCanvas(0,y,plane); ctx.save(); ctx.strokeStyle='#b53a0a'; ctx.setLineDash([6,8]); ctx.lineWidth=1.2; ctx.beginPath(); ctx.moveTo(0,p.y); ctx.lineTo(CANVAS_SIZE,p.y); ctx.stroke(); ctx.restore(); }
+        
+        function drawShapeOnCanvas(ctx, start, end, color, type, plane, isPreview, extraPoints) {
+            if(type===PRIMITIVE_TYPES.PLANE && extraPoints && extraPoints.length===3){
+                const pts=extraPoints.map(p=>worldToCanvas(plane==='H'?p.x:plane==='V'?p.x:p.y, plane==='H'?p.y:plane==='V'?p.z:p.z, plane));
+                ctx.save(); ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y); ctx.lineTo(pts[1].x,pts[1].y); ctx.lineTo(pts[2].x,pts[2].y); ctx.closePath();
+                if(isPreview){ ctx.fillStyle='#ff8c42'; ctx.globalAlpha=0.25; ctx.fill(); ctx.globalAlpha=1; ctx.setLineDash([8,6]); ctx.strokeStyle='#ff8c42'; ctx.stroke(); ctx.setLineDash([]); }
+                else{ ctx.fillStyle=color; ctx.globalAlpha=0.35; ctx.fill(); ctx.globalAlpha=1; ctx.strokeStyle=color; ctx.lineWidth=2; ctx.stroke(); }
+                ctx.restore(); return;
+            }
+            const p1=worldToCanvas(start.x,start.y,plane), p2=worldToCanvas(end.x,end.y,plane);
+            if(Math.abs(p1.x-p2.x) <= 2 && Math.abs(p1.y-p2.y) <= 2) {
+                ctx.beginPath(); ctx.fillStyle = isPreview ? '#ff8c42' : color; ctx.arc(p1.x, p1.y, 5, 0, 2*Math.PI); ctx.fill();
+                ctx.beginPath(); ctx.fillStyle = '#171a1f'; ctx.arc(p1.x, p1.y, 3, 0, 2*Math.PI); ctx.fill();
+                return;
+            }
+            if(type===PRIMITIVE_TYPES.LINE){ ctx.save(); ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.strokeStyle=isPreview?'#ff8c42':color; ctx.lineWidth=2; if(isPreview){ctx.setLineDash([8,6]);} ctx.stroke(); ctx.restore(); }
+            else{ const x=Math.min(p1.x,p2.x), y=Math.min(p1.y,p2.y), w=Math.abs(p2.x-p1.x), h=Math.abs(p2.y-p1.y);
+                ctx.save(); ctx.strokeStyle=isPreview?'#ff8c42':color; ctx.lineWidth=2; if(isPreview){ctx.setLineDash([8,6]);}
+                if(type===PRIMITIVE_TYPES.RECT) ctx.strokeRect(x,y,w,h);
+                else if(type===PRIMITIVE_TYPES.ELLIPSE){ ctx.beginPath(); ctx.ellipse(x+w/2,y+h/2,w/2,h/2,0,0,2*Math.PI); ctx.stroke(); }
+                ctx.restore();
+            }
+        }
+        
+        function updateProjections() {
+            ctxH.clearRect(0,0,CANVAS_SIZE,CANVAS_SIZE); ctxV.clearRect(0,0,CANVAS_SIZE,CANVAS_SIZE); ctxP.clearRect(0,0,CANVAS_SIZE,CANVAS_SIZE);
+            drawGrid(ctxH); drawGrid(ctxV); drawGrid(ctxP);
+            spatialObjects.forEach(obj=>{
+                if(isObjectComplete(obj)){
+                    if(obj.primitive===PRIMITIVE_TYPES.PLANE){
+                        drawShapeOnCanvas(ctxH,null,null,obj.color,obj.primitive,'H',false,obj.points);
+                        drawShapeOnCanvas(ctxV,null,null,obj.color,obj.primitive,'V',false,obj.points);
+                        drawShapeOnCanvas(ctxP,null,null,obj.color,obj.primitive,'P',false,obj.points);
+                        obj.points.forEach(p=>{ drawPoint(ctxH,p.x,p.y,'H',obj.color,4); drawPoint(ctxV,p.x,p.z,'V',obj.color,4); drawPoint(ctxP,p.y,p.z,'P',obj.color,4); });
+                    } else {
+                        drawShapeOnCanvas(ctxH,getHProjection(obj).start,getHProjection(obj).end,obj.color,obj.primitive,'H',false);
+                        drawShapeOnCanvas(ctxV,getVProjection(obj).start,getVProjection(obj).end,obj.color,obj.primitive,'V',false);
+                        drawShapeOnCanvas(ctxP,getPProjection(obj).start,getPProjection(obj).end,obj.color,obj.primitive,'P',false);
+                    }
                 }
             });
-            canvas.addEventListener('touchstart', (e) => startDrawingGeneric(e, canvas, plane), { passive: false });
-            canvas.addEventListener('touchmove', (e) => moveGeneric(e), { passive: false });
-            canvas.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                if (drawing) endDrawingGeneric(e);
-            });
-            canvas.addEventListener('touchcancel', (e) => {
-                if (drawing && currentCanvas === canvas) {
-                    drawing = false; previewLine = null; currentCanvas = null; currentPlane = null;
-                    scheduleRedraw();
+            if(activeObject && activeObject.primitive===PRIMITIVE_TYPES.PLANE){
+                const pts=activeObject.points||[];
+                pts.forEach(p=>{ drawPoint(ctxH,p.x,p.y,'H',activeObject.color,5); drawPoint(ctxV,p.x,p.z,'V',activeObject.color,5); drawPoint(ctxP,p.y,p.z,'P',activeObject.color,5); });
+                if(pts.length===2){ const [p1,p2]=pts; ['H','V','P'].forEach(pl=>{ let ctx=pl==='H'?ctxH:pl==='V'?ctxV:ctxP; let cp1=worldToCanvas(pl==='H'?p1.x:pl==='V'?p1.x:p1.y, pl==='H'?p1.y:pl==='V'?p1.z:p1.z,pl); let cp2=worldToCanvas(pl==='H'?p2.x:pl==='V'?p2.x:p2.y, pl==='H'?p2.y:pl==='V'?p2.z:p2.z,pl); ctx.beginPath(); ctx.moveTo(cp1.x,cp1.y); ctx.lineTo(cp2.x,cp2.y); ctx.strokeStyle=activeObject.color; ctx.setLineDash([8,6]); ctx.stroke(); ctx.setLineDash([]); }); }
+                if(pts.length===3) drawShapeOnCanvas(ctxH,null,null,activeObject.color,activeObject.primitive,'H',true,pts);
+                if(planeBuilding && planeTempVertex){
+                    if(planeTempVertex.x!==null){ drawAuxVertical(ctxV,planeTempVertex.x,'V'); drawAuxVertical(ctxH,planeTempVertex.x,'H'); }
+                    if(planeTempVertex.y!==null){ drawAuxVertical(ctxP,planeTempVertex.y,'P'); drawAuxHorizontal(ctxH,planeTempVertex.y,'H'); }
+                    if(planeTempVertex.z!==null){ drawAuxHorizontal(ctxV,planeTempVertex.z,'V'); drawAuxHorizontal(ctxP,planeTempVertex.z,'P'); }
+                    if(currentCanvas && planeStartCoords && planeMousePos){
+                        const plMap={horizontal:'H',frontal:'V',profile:'P'}; const currPl=plMap[currentCanvas.id];
+                        if(currPl){ const ctxMap={horizontal:ctxH,frontal:ctxV,profile:ctxP}; const cctx=ctxMap[currentCanvas.id];
+                            if(cctx){ const s=worldToCanvas(planeStartCoords.x,planeStartCoords.y,currPl); const e=worldToCanvas(planeMousePos.x,planeMousePos.y,currPl);
+                                cctx.save(); cctx.beginPath(); cctx.moveTo(s.x,s.y); cctx.lineTo(e.x,e.y); cctx.strokeStyle='#ffaa77'; cctx.setLineDash([6,8]); cctx.stroke(); cctx.restore();
+                            }
+                        }
+                    }
                 }
-            });
-        });
-        document.addEventListener('mousemove', (e) => { if (drawing && currentCanvas) moveGeneric(e); });
-        document.addEventListener('touchmove', (e) => { if (drawing && currentCanvas) moveGeneric(e); }, { passive: false });
-        document.body.addEventListener('touchmove', (e) => { if (drawing) e.preventDefault(); }, { passive: false });
-    }
-
-    function clearAll() {
-        spatialObjects = []; activeObject = null; drawing = false; previewLine = null; currentCanvas = null; currentPlane = null;
-        startConstraintType = null; startConstraintValue = null; currentPointKey = null;
-        markConstraintsDirty();
-        scheduleRedraw();
-    }
-    function setPrimitive(type, btnId) {
-        currentPrimitive = type;
-        ['lineBtn','rectBtn','ellipseBtn'].forEach(id => document.getElementById(id).classList.remove('mode-active'));
-        document.getElementById(btnId).classList.add('mode-active');
-        scheduleRedraw();
-    }
-    function startNewObject() {
-        isNewObjectMode = true;
-        colorIndex = (colorIndex + 1) % colorPalette.length;
-        currentColor = colorPalette[colorIndex];
-        const indicator = document.getElementById('colorIndicator');
-        if (indicator) indicator.style.backgroundColor = currentColor;
-        const btn = document.getElementById('newObjectBtn');
-        if (btn) btn.innerHTML = `+ Новый объект <div class="right-badge"><div id="colorIndicator" class="color-indicator" style="background-color: ${currentColor};"></div></div>`;
-        if (activeObject && !isObjectComplete(activeObject)) activeObject = null;
-        markConstraintsDirty();
-        scheduleRedraw();
-    }
-
-    function updateAxes() {
-        axesContainer.innerHTML = '';
-        const containerRect = container.getBoundingClientRect();
-        const canvasRect = canvasV.getBoundingClientRect();
-        const offsetX = canvasRect.left - containerRect.left;
-        const offsetY = canvasRect.top - containerRect.top;
-        const centerAbsX = offsetX + CANVAS_SIZE;
-        const centerAbsY = offsetY + CANVAS_SIZE;
-        const axisLen = CANVAS_SIZE + 12;
-        const orangeColor = '#f97316';
-        const addAxis = (dir, label, len, startOff) => {
-            const line = document.createElement('div'); line.className = 'axis-line'; line.style.backgroundColor = orangeColor;
-            const labelSpan = document.createElement('div'); labelSpan.className = 'axis-label'; labelSpan.textContent = label; labelSpan.style.color = orangeColor;
-            if (dir === 'left') {
-                line.style.width = `${len}px`; line.style.height = '1.5px'; line.style.left = `${centerAbsX - len + startOff}px`; line.style.top = `${centerAbsY - 0.75}px`;
-                labelSpan.style.left = `${centerAbsX - len - 12}px`; labelSpan.style.top = `${centerAbsY - 9}px`;
-                const arrow = document.createElement('div'); arrow.style.cssText = `position:absolute; width:0; height:0; border-top:4px solid transparent; border-bottom:4px solid transparent; border-right:6px solid ${orangeColor}; left:${centerAbsX - len - 4}px; top:${centerAbsY - 4}px;`;
-                axesContainer.appendChild(arrow);
-            } else if (dir === 'right') {
-                line.style.width = `${len}px`; line.style.height = '1.5px'; line.style.left = `${centerAbsX + startOff}px`; line.style.top = `${centerAbsY - 0.75}px`;
-                labelSpan.style.left = `${centerAbsX + len - 9}px`; labelSpan.style.top = `${centerAbsY - 10}px`;
-                const arrow = document.createElement('div'); arrow.style.cssText = `position:absolute; width:0; height:0; border-top:4px solid transparent; border-bottom:4px solid transparent; border-left:6px solid ${orangeColor}; left:${centerAbsX + len - 2}px; top:${centerAbsY - 4}px;`;
-                axesContainer.appendChild(arrow);
-            } else if (dir === 'down') {
-                line.style.width = '1.5px'; line.style.height = `${len}px`; line.style.left = `${centerAbsX - 0.75}px`; line.style.top = `${centerAbsY + startOff}px`;
-                labelSpan.style.left = `${centerAbsX + 5}px`; labelSpan.style.top = `${centerAbsY + len - 5}px`;
-                const arrow = document.createElement('div'); arrow.style.cssText = `position:absolute; width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-top:6px solid ${orangeColor}; left:${centerAbsX - 4}px; top:${centerAbsY + len - 3}px;`;
-                axesContainer.appendChild(arrow);
-            } else if (dir === 'up') {
-                line.style.width = '1.5px'; line.style.height = `${len}px`; line.style.left = `${centerAbsX - 0.75}px`; line.style.top = `${centerAbsY - len + startOff}px`;
-                labelSpan.style.left = `${centerAbsX + 5}px`; labelSpan.style.top = `${centerAbsY - len - 10}px`;
-                const arrow = document.createElement('div'); arrow.style.cssText = `position:absolute; width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-bottom:6px solid ${orangeColor}; left:${centerAbsX - 4}px; top:${centerAbsY - len - 3}px;`;
-                axesContainer.appendChild(arrow);
             }
-            axesContainer.appendChild(line); axesContainer.appendChild(labelSpan);
-        };
-        addAxis('left', 'X', axisLen, 0);
-        addAxis('right', 'Y', axisLen, 0);
-        addAxis('down', 'Y', axisLen, 0);
-        addAxis('up', 'Z', axisLen, 0);
-        const origin = document.createElement('div');
-        origin.style.cssText = `position:absolute; width:4px; height:4px; background:${orangeColor}; border-radius:50%; left:${centerAbsX-2}px; top:${centerAbsY-2}px; box-shadow:0 0 0 2px #0b0b0f;`;
-        axesContainer.appendChild(origin);
-    }
-
-    function resizeCanvas() {
-        let targetSize;
-        if (window.innerWidth <= 768) {
-            let base = Math.floor(Math.min(window.innerHeight * 0.36, window.innerWidth * 0.4));
-            targetSize = Math.max(200, base - 40);
-            GRID_STEP = Math.max(10, Math.floor(20 / 1.5));
-        } else {
-            targetSize = Math.floor(window.innerHeight * 0.42);
-            GRID_STEP = 20;
+            if(activeObject && activeObject.primitive!==PRIMITIVE_TYPES.PLANE && !isObjectComplete(activeObject)){
+                const inc= getIncompleteProjections(activeObject);
+                if(!inc.includes('H')) drawShapeOnCanvas(ctxH,getHProjection(activeObject).start,getHProjection(activeObject).end,activeObject.color,activeObject.primitive,'H',true);
+                if(!inc.includes('V')) drawShapeOnCanvas(ctxV,getVProjection(activeObject).start,getVProjection(activeObject).end,activeObject.color,activeObject.primitive,'V',true);
+                if(!inc.includes('P')) drawShapeOnCanvas(ctxP,getPProjection(activeObject).start,getPProjection(activeObject).end,activeObject.color,activeObject.primitive,'P',true);
+                if(inc.includes('V')&&!inc.includes('H')){ const h=getHProjection(activeObject); drawAuxVertical(ctxV,h.start.x,'V'); drawAuxVertical(ctxV,h.end.x,'V'); }
+                if(inc.includes('H')&&!inc.includes('V')){ const v=getVProjection(activeObject); drawAuxVertical(ctxH,v.start.x,'H'); drawAuxVertical(ctxH,v.end.x,'H'); }
+                if(inc.includes('P')&&!inc.includes('V')){ const v=getVProjection(activeObject); drawAuxHorizontal(ctxP,v.start.y,'P'); drawAuxHorizontal(ctxP,v.end.y,'P'); }
+                if(inc.includes('V')&&!inc.includes('P')){ const p=getPProjection(activeObject); drawAuxHorizontal(ctxV,p.start.y,'V'); drawAuxHorizontal(ctxV,p.end.y,'V'); }
+                if(inc.includes('P')&&!inc.includes('H')){ const h=getHProjection(activeObject); drawAuxVertical(ctxP,h.start.y,'P'); drawAuxVertical(ctxP,h.end.y,'P'); }
+                if(inc.includes('H')&&!inc.includes('P')){ const p=getPProjection(activeObject); drawAuxHorizontal(ctxH,p.start.x,'H'); drawAuxHorizontal(ctxH,p.end.x,'H'); }
+            }
+            if(previewLine && currentCanvas && currentPrimitive!==PRIMITIVE_TYPES.PLANE){
+                const ctxMap={horizontal:ctxH,frontal:ctxV,profile:ctxP}; const plMap={horizontal:'H',frontal:'V',profile:'P'};
+                const cctx=ctxMap[currentCanvas.id]; const pl=plMap[currentCanvas.id];
+                if(cctx) drawShapeOnCanvas(cctx,previewLine.start,previewLine.end,'#ff8c42',currentPrimitive,pl,true);
+            }
         }
-        targetSize = Math.min(680, Math.max(200, targetSize));
-        if (targetSize === CANVAS_SIZE) return;
-        CANVAS_SIZE = targetSize;
-        canvasV.width = canvasH.width = canvasP.width = CANVAS_SIZE;
-        canvasV.height = canvasH.height = canvasP.height = CANVAS_SIZE;
-        updateProjections();
-        updateAxes();
-    }
-
-    function init() {
-        resizeCanvas();
-        attachEvents();
-        document.getElementById('clearBtn').addEventListener('click', clearAll);
-        document.getElementById('newObjectBtn').addEventListener('click', startNewObject);
-        document.getElementById('lineBtn').addEventListener('click', () => setPrimitive('line', 'lineBtn'));
-        document.getElementById('rectBtn').addEventListener('click', () => setPrimitive('rect', 'rectBtn'));
-        document.getElementById('ellipseBtn').addEventListener('click', () => setPrimitive('ellipse', 'ellipseBtn'));
-        window.addEventListener('resize', () => resizeCanvas());
-        updateProjections();
-        startNewObject();
-    }
-    init();
+        
+        // ===================== НОВАЯ ФУНКЦИЯ: ГЛОБАЛЬНЫЕ ЛИНИИ СВЯЗИ (С ВОЗМОЖНОСТЬЮ ОТКЛЮЧЕНИЯ) =====================
+        let svgLayer = null;
+        let linesEnabled = true; // состояние линий связи (вкл/выкл)
+        
+        function ensureSvgLayer() {
+            if (!svgLayer || !container.contains(svgLayer)) {
+                svgLayer = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+                svgLayer.classList.add("connection-lines-svg");
+                container.appendChild(svgLayer);
+            }
+            svgLayer.setAttribute("width", container.clientWidth);
+            svgLayer.setAttribute("height", container.clientHeight);
+        }
+        
+        function getAbsolutePos(canvas, worldX, worldY, plane) {
+            const rect = canvas.getBoundingClientRect();
+            const containerRect = container.getBoundingClientRect();
+            const canvasPt = worldToCanvas(worldX, worldY, plane);
+            const x = rect.left + canvasPt.x - containerRect.left;
+            const y = rect.top + canvasPt.y - containerRect.top;
+            return { x, y };
+        }
+        
+        function collectAllPoints() {
+            const points = [];
+            const addPoint = (p) => { if (p && p.x !== null && p.y !== null && p.z !== null) points.push(p); };
+            spatialObjects.forEach(obj => {
+                if (obj.primitive === PRIMITIVE_TYPES.PLANE && obj.points) obj.points.forEach(p => addPoint(p));
+                else if (obj.start && obj.end) { addPoint(obj.start); addPoint(obj.end); }
+            });
+            if (activeObject && !isObjectComplete(activeObject)) {
+                if (activeObject.primitive === PRIMITIVE_TYPES.PLANE && activeObject.points) activeObject.points.forEach(p => addPoint(p));
+                else if (activeObject.start && activeObject.end) { addPoint(activeObject.start); addPoint(activeObject.end); }
+            }
+            // удаляем дубликаты по координатам
+            const unique = [];
+            const seen = new Set();
+            for (let p of points) {
+                const key = `${p.x},${p.y},${p.z}`;
+                if (!seen.has(key)) { seen.add(key); unique.push(p); }
+            }
+            return unique;
+        }
+        
+        function updateConnectionLines() {
+            if (!linesEnabled) {
+                if (svgLayer) svgLayer.innerHTML = "";
+                return;
+            }
+            ensureSvgLayer();
+            svgLayer.innerHTML = "";
+            const points = collectAllPoints();
+            if (points.length === 0) return;
+            
+            // ИСПРАВЛЕНИЕ: явно задаём stroke-dasharray и проверяем поддержку
+            const style = { 
+                stroke: "#00aaff", 
+                strokeWidth: "1.5", 
+                "stroke-dasharray": "4 4",  // ← правильное имя атрибута в camelCase для JS
+                opacity: "0.9",
+                "vector-effect": "non-scaling-stroke"  // чтобы пунктир не масштабировался
+            };
+            
+            for (let pt of points) {
+                const posH = getAbsolutePos(canvasH, pt.x, pt.y, 'H');
+                const posV = getAbsolutePos(canvasV, pt.x, pt.z, 'V');
+                const posP = getAbsolutePos(canvasP, pt.y, pt.z, 'P');
+                const isValid = (p) => p && isFinite(p.x) && isFinite(p.y);
+                
+                // Связь H ↔ V
+                if (isValid(posH) && isValid(posV)) {
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", posH.x);
+                    line.setAttribute("y1", posH.y);
+                    line.setAttribute("x2", posV.x);
+                    line.setAttribute("y2", posV.y);
+                    // Применяем стили через setAttribute для надёжности
+                    Object.entries(style).forEach(([k, v]) => line.setAttribute(k, v));
+                    svgLayer.appendChild(line);
+                }
+                
+                // Связь V ↔ P
+                if (isValid(posV) && isValid(posP)) {
+                    const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    line.setAttribute("x1", posV.x);
+                    line.setAttribute("y1", posV.y);
+                    line.setAttribute("x2", posP.x);
+                    line.setAttribute("y2", posP.y);
+                    Object.entries(style).forEach(([k, v]) => line.setAttribute(k, v));
+                    svgLayer.appendChild(line);
+                }
+            }
+        }
+                
+        function toggleLines() {
+            linesEnabled = !linesEnabled;
+            const statusSpan = document.getElementById('linesToggleStatus');
+            if (statusSpan) {
+                statusSpan.textContent = linesEnabled ? "ВКЛ" : "ВЫКЛ";
+                statusSpan.style.color = linesEnabled ? "#00aaff" : "#ff5555";
+            }
+            const toggleBtn = document.getElementById('toggleLinesBtn');
+            if (toggleBtn) {
+                if (linesEnabled) {
+                    toggleBtn.style.borderColor = "#00aaff";
+                } else {
+                    toggleBtn.style.borderColor = "#ff5555";
+                }
+            }
+            scheduleRedraw(); // перерисовка (вызовет updateConnectionLines с новым состоянием)
+        }
+        // ===================== КОНЕЦ ДОБАВЛЕННОГО КОДА =====================
+        
+        function scheduleRedraw() { if(!redrawScheduled){ redrawScheduled=true; requestAnimationFrame(()=>{ redrawScheduled=false; updateProjections(); updateAllClassifications(); refresh3D(); updateConnectionLines(); }); } }
+        
+        function classifyLineSegment(p1,p2){
+            if(!p1||!p2) return {type:"—", desc:"Недостаточно данных", vec:null};
+            if(p1.x===null||p1.y===null||p1.z===null||p2.x===null||p2.y===null||p2.z===null) return {type:"⏳ Ожидание", desc:"Задайте обе точки", vec:null};
+            let dx=p2.x-p1.x, dy=p2.y-p1.y, dz=p2.z-p1.z;
+            let v={x:dx/GRID_STEP, y:dy/GRID_STEP, z:dz/GRID_STEP};
+            if(Math.abs(dx)<EPS&&Math.abs(dy)<EPS&&Math.abs(dz)<EPS) return {type:"🔴 Точка", desc:"Вырожденный отрезок", vec:v};
+            if(Math.abs(dx)<EPS&&Math.abs(dy)<EPS) return {type:"📌 Горизонтально-проецирующая", desc:"⊥ Π₁, на H — точка", vec:v};
+            if(Math.abs(dx)<EPS&&Math.abs(dz)<EPS) return {type:"📌 Фронтально-проецирующая", desc:"⊥ Π₂, на V — точка", vec:v};
+            if(Math.abs(dy)<EPS&&Math.abs(dz)<EPS) return {type:"📌 Профильно-проецирующая", desc:"⊥ Π₃, на P — точка", vec:v};
+            if(Math.abs(dz)<EPS) return {type:"📐 Горизонтальная уровня", desc:"∥ Π₁, Z = const", vec:v};
+            if(Math.abs(dy)<EPS) return {type:"📐 Фронтальная уровня", desc:"∥ Π₂, Y = const", vec:v};
+            if(Math.abs(dx)<EPS) return {type:"📐 Профильная уровня", desc:"∥ Π₃, X = const", vec:v};
+            return {type:"🎲 Прямая общего положения", desc:"Проецируется с искажением", vec:v};
+        }
+        function classifyPlane(p1,p2,p3){
+            if(!p1||!p2||!p3) return {type:"—", desc:"Недостаточно точек", normal:null};
+            if(p1.x===null||p1.y===null||p1.z===null||p2.x===null||p2.y===null||p2.z===null||p3.x===null||p3.y===null||p3.z===null) 
+                return {type:"⏳ Ожидание", desc:"Задайте все три вершины", normal:null};
+            let u={x:p2.x-p1.x, y:p2.y-p1.y, z:p2.z-p1.z};
+            let v={x:p3.x-p1.x, y:p3.y-p1.y, z:p3.z-p1.z};
+            let nx = u.y*v.z - u.z*v.y;
+            let ny = u.z*v.x - u.x*v.z;
+            let nz = u.x*v.y - u.y*v.x;
+            let norm = Math.hypot(nx,ny,nz);
+            if(norm<EPS) return {type:"⚠️ Вырожденная", desc:"Точки коллинеарны", normal:null};
+            let normal = {x:nx/norm, y:ny/norm, z:nz/norm};
+            let epsN=0.01;
+            let absX=Math.abs(normal.x), absY=Math.abs(normal.y), absZ=Math.abs(normal.z);
+            if(absZ > 1-epsN) return {type:"📐 Горизонтальная уровня", desc:"∥ Π₁ (Z = const)", normal:normal};
+            if(absY > 1-epsN) return {type:"📐 Фронтальная уровня", desc:"∥ Π₂ (Y = const)", normal:normal};
+            if(absX > 1-epsN) return {type:"📐 Профильная уровня", desc:"∥ Π₃ (X = const)", normal:normal};
+            if(Math.abs(nz)<epsN) return {type:"📌 Горизонтально-проецирующая", desc:"⊥ Π₁, след на H — прямая", normal:normal};
+            if(Math.abs(ny)<epsN) return {type:"📌 Фронтально-проецирующая", desc:"⊥ Π₂, след на V — прямая", normal:normal};
+            if(Math.abs(nx)<epsN) return {type:"📌 Профильно-проецирующая", desc:"⊥ Π₃, след на P — прямая", normal:normal};
+            return {type:"🎲 Плоскость общего положения", desc:"Наклонена ко всем плоскостям", normal:normal};
+        }
+        function updateAllClassifications(){ 
+            let lastLine=null;
+            for(let i=spatialObjects.length-1;i>=0;i--) if(spatialObjects[i].primitive==='line' && isObjectComplete(spatialObjects[i])){lastLine=spatialObjects[i]; break;}
+            let targetLine= (activeObject && activeObject.primitive==='line' && isObjectComplete(activeObject)) ? activeObject : lastLine;
+            if(targetLine){
+                let res=classifyLineSegment(targetLine.start, targetLine.end);
+                document.getElementById('lineType').innerHTML=res.type;
+                document.getElementById('lineDesc').innerHTML=res.desc;
+                if(res.vec) document.getElementById('lineVector').innerHTML=`Направляющий вектор: (${res.vec.x.toFixed(1)}, ${res.vec.y.toFixed(1)}, ${res.vec.z.toFixed(1)})`;
+                else document.getElementById('lineVector').innerHTML='';
+            } else {
+                document.getElementById('lineType').innerHTML='—';
+                document.getElementById('lineDesc').innerHTML='Нарисуйте отрезок';
+                document.getElementById('lineVector').innerHTML='';
+            }
+            let lastPlane=null;
+            for(let i=spatialObjects.length-1;i>=0;i--) if(spatialObjects[i].primitive==='plane' && isObjectComplete(spatialObjects[i])){lastPlane=spatialObjects[i]; break;}
+            let targetPlane= (activeObject && activeObject.primitive==='plane' && isObjectComplete(activeObject)) ? activeObject : lastPlane;
+            if(targetPlane && targetPlane.points && targetPlane.points.length===3){
+                let [p1,p2,p3]=targetPlane.points;
+                let res=classifyPlane(p1,p2,p3);
+                document.getElementById('planeType').innerHTML=res.type;
+                document.getElementById('planeDesc').innerHTML=res.desc;
+                if(res.normal) document.getElementById('planeNormal').innerHTML=`Нормаль: (${res.normal.x.toFixed(3)}, ${res.normal.y.toFixed(3)}, ${res.normal.z.toFixed(3)})`;
+                else document.getElementById('planeNormal').innerHTML='';
+            } else {
+                document.getElementById('planeType').innerHTML='—';
+                document.getElementById('planeDesc').innerHTML='Постройте треугольник';
+                document.getElementById('planeNormal').innerHTML='';
+            }
+        }
+        
+        // ---------- ОБРАБОТЧИКИ (полностью скопированы из APLV2, без изменений) ----------
+        function startDrawingGeneric(e, canvas, planeId) {
+            if(currentPrimitive===PRIMITIVE_TYPES.PLANE) return;
+            e.preventDefault();
+            const pos=getPointerPos(canvas,e); const world=canvasToWorld(pos.x,pos.y,planeId);
+            let {x,y}=snapWithConstraints(world.x,world.y,planeId);
+            if(!activeObject||isNewObjectMode){ activeObject={id:Date.now()+'-'+Math.random(), start:{x:null,y:null,z:null}, end:{x:null,y:null,z:null}, color:currentColor, primitive:currentPrimitive}; isNewObjectMode=false; markConstraintsDirty(); }
+            updateConstraints(); const degenerate=checkDegenerateProjection(planeId);
+            if(degenerate.isDegenerate){ let px,py; if(degenerate.type==='vertical'){px=degenerate.value; py=y;} else if(degenerate.type==='horizontal'){px=x; py=degenerate.value;} else {px=degenerate.valueX; py=degenerate.valueY;}
+                let pk='start'; if(activeObject.start.x!==null&&activeObject.start.y!==null&&activeObject.start.z!==null) pk='end';
+                assignCoordinates(activeObject,planeId,px,py,pk); if(isObjectComplete(activeObject)){spatialObjects.push(activeObject); activeObject=null; markConstraintsDirty();} scheduleRedraw(); return; }
+            const boundary=isOnBoundary(x,y,planeId); const hasConstraints=auxConstraints[planeId].minX!==null||auxConstraints[planeId].maxX!==null||auxConstraints[planeId].minY!==null||auxConstraints[planeId].maxY!==null;
+            if(!boundary.onBoundary&&hasConstraints) return;
+            let pointKey=null; if(boundary.onBoundary&&boundary.type) pointKey=findPointByCoordinate(planeId,boundary.type,boundary.value);
+            drawing=true; startX=x; startY=y; currentCanvas=canvas; currentPlane=planeId; startConstraintType=boundary.type; startConstraintValue=boundary.value; currentPointKey=pointKey; previewLine=null; scheduleRedraw();
+        }
+        function moveGeneric(e){ if(!drawing||!currentCanvas||currentPrimitive===PRIMITIVE_TYPES.PLANE) return; e.preventDefault(); const pos=getPointerPos(currentCanvas,e); const world=canvasToWorld(pos.x,pos.y,currentPlane); const snapped=snapWithConstraints(world.x,world.y,currentPlane); previewLine={start:{x:startX,y:startY}, end:{x:snapped.x,y:snapped.y}}; scheduleRedraw(); }
+        function endDrawingGeneric(e){ 
+            if(!drawing||!currentCanvas||currentPrimitive===PRIMITIVE_TYPES.PLANE) return; 
+            e.preventDefault(); 
+            const pos=getPointerPos(currentCanvas,e); const world=canvasToWorld(pos.x,pos.y,currentPlane); 
+            let {x,y}=snapWithConstraints(world.x,world.y,currentPlane); 
+            updateConstraints(); 
+            const hasConstraints=auxConstraints[currentPlane].minX!==null||auxConstraints[currentPlane].maxX!==null||auxConstraints[currentPlane].minY!==null||auxConstraints[currentPlane].maxY!==null;
+            if(hasConstraints && startConstraintType){
+                const cons=auxConstraints[currentPlane]; let endBoundary=null;
+                if(startConstraintType==='vertical'){ if(cons.minX!==null&&Math.abs(x-cons.minX)<=TOLERANCE&&Math.abs(cons.minX-startConstraintValue)>TOLERANCE) endBoundary={onBoundary:true,type:'vertical',value:cons.minX}; else if(cons.maxX!==null&&Math.abs(x-cons.maxX)<=TOLERANCE&&Math.abs(cons.maxX-startConstraintValue)>TOLERANCE) endBoundary={onBoundary:true,type:'vertical',value:cons.maxX}; }
+                else if(startConstraintType==='horizontal'){ if(cons.minY!==null&&Math.abs(y-cons.minY)<=TOLERANCE&&Math.abs(cons.minY-startConstraintValue)>TOLERANCE) endBoundary={onBoundary:true,type:'horizontal',value:cons.minY}; else if(cons.maxY!==null&&Math.abs(y-cons.maxY)<=TOLERANCE&&Math.abs(cons.maxY-startConstraintValue)>TOLERANCE) endBoundary={onBoundary:true,type:'horizontal',value:cons.maxY}; }
+                if(endBoundary){
+                    let endPointKey=findPointByCoordinate(currentPlane,endBoundary.type,endBoundary.value); 
+                    if(!currentPointKey) currentPointKey='start'; 
+                    if(!endPointKey) endPointKey=(currentPointKey==='start')?'end':'start'; 
+                    let finalX=(endBoundary.type==='vertical')?endBoundary.value:x; 
+                    let finalY=(endBoundary.type==='horizontal')?endBoundary.value:y;
+                    assignCoordinates(activeObject,currentPlane,startX,startY,currentPointKey); 
+                    assignCoordinates(activeObject,currentPlane,finalX,finalY,endPointKey);
+                    if(isObjectComplete(activeObject)){spatialObjects.push(activeObject); activeObject=null; markConstraintsDirty();} 
+                    drawing=false; previewLine=null; currentCanvas=null; currentPlane=null; startConstraintType=null; startConstraintValue=null; currentPointKey=null; scheduleRedraw();
+                    return;
+                }
+            }
+            assignCoordinates(activeObject,currentPlane,startX,startY,'start');
+            assignCoordinates(activeObject,currentPlane,x,y,'end');
+            drawing=false; previewLine=null; currentCanvas=null; currentPlane=null; startConstraintType=null; startConstraintValue=null; currentPointKey=null;
+            if(isObjectComplete(activeObject)){spatialObjects.push(activeObject); activeObject=null; markConstraintsDirty();}
+            scheduleRedraw();
+        }
+        
+        function startPlaneVertex(planeId,sx,sy){ if(!activeObject) activeObject={id:Date.now()+'-plane', primitive:PRIMITIVE_TYPES.PLANE, points:[], color:currentColor}; planeTempVertex={x:null,y:null,z:null}; if(planeId==='H'){planeTempVertex.x=sx; planeTempVertex.y=sy;} else if(planeId==='V'){planeTempVertex.x=sx; planeTempVertex.z=sy;} else {planeTempVertex.y=sx; planeTempVertex.z=sy;} planeBuilding=true; planeStartPlane=planeId; planeStartCoords={x:sx,y:sy}; scheduleRedraw(); }
+        function finishPlaneVertex(planeId,sx,sy){ if(!planeBuilding) return; if(planeId==='H'){ if(planeTempVertex.x!==null&&Math.abs(planeTempVertex.x-sx)>TOLERANCE) return; if(planeTempVertex.y!==null&&Math.abs(planeTempVertex.y-sy)>TOLERANCE) return; if(planeTempVertex.x===null) planeTempVertex.x=sx; if(planeTempVertex.y===null) planeTempVertex.y=sy; } else if(planeId==='V'){ if(planeTempVertex.x!==null&&Math.abs(planeTempVertex.x-sx)>TOLERANCE) return; if(planeTempVertex.z!==null&&Math.abs(planeTempVertex.z-sy)>TOLERANCE) return; if(planeTempVertex.x===null) planeTempVertex.x=sx; if(planeTempVertex.z===null) planeTempVertex.z=sy; } else { if(planeTempVertex.y!==null&&Math.abs(planeTempVertex.y-sx)>TOLERANCE) return; if(planeTempVertex.z!==null&&Math.abs(planeTempVertex.z-sy)>TOLERANCE) return; if(planeTempVertex.y===null) planeTempVertex.y=sx; if(planeTempVertex.z===null) planeTempVertex.z=sy; }
+            if(planeTempVertex.x!==null&&planeTempVertex.y!==null&&planeTempVertex.z!==null){ let dup=false; for(let p of activeObject.points) if(Math.abs(p.x-planeTempVertex.x)<=TOLERANCE&&Math.abs(p.y-planeTempVertex.y)<=TOLERANCE&&Math.abs(p.z-planeTempVertex.z)<=TOLERANCE){dup=true; break;} if(!dup) activeObject.points.push({x:planeTempVertex.x,y:planeTempVertex.y,z:planeTempVertex.z}); planeBuilding=false; planeTempVertex={x:null,y:null,z:null}; if(activeObject.points.length===3){ spatialObjects.push(activeObject); activeObject=null; } scheduleRedraw(); } else scheduleRedraw(); }
+        function onCanvasClick(e,canvas,planeId){ e.preventDefault(); const pos=getPointerPos(canvas,e); const world=canvasToWorld(pos.x,pos.y,planeId); const sx=snapToGrid(world.x), sy=snapToGrid(world.y); if(currentPrimitive===PRIMITIVE_TYPES.PLANE){ if(!activeObject||activeObject.points.length<3){ if(!planeBuilding) startPlaneVertex(planeId,sx,sy); else finishPlaneVertex(planeId,sx,sy); } return; } if(!drawing) startDrawingGeneric(e,canvas,planeId); else endDrawingGeneric(e); }
+        function onMouseMove(e,canvas,planeId){ if(currentPrimitive===PRIMITIVE_TYPES.PLANE){ if(planeBuilding&&currentCanvas===canvas){ const pos=getPointerPos(canvas,e); const world=canvasToWorld(pos.x,pos.y,planeId); planeMousePos={x:snapToGrid(world.x),y:snapToGrid(world.y)}; scheduleRedraw(); } return; } moveGeneric(e); }
+        function attachEvents(){ const handlers=[{canvas:canvasH,plane:'H'},{canvas:canvasV,plane:'V'},{canvas:canvasP,plane:'P'}]; handlers.forEach(({canvas,plane})=>{ canvas.addEventListener('mousedown',(e)=>onCanvasClick(e,canvas,plane)); canvas.addEventListener('mouseup',(e)=>{ if(drawing&&currentPrimitive!==PRIMITIVE_TYPES.PLANE) endDrawingGeneric(e); }); canvas.addEventListener('mousemove',(e)=>onMouseMove(e,canvas,plane)); canvas.addEventListener('mouseleave',()=>{ if(drawing&&currentPrimitive!==PRIMITIVE_TYPES.PLANE){ drawing=false; previewLine=null; currentCanvas=null; scheduleRedraw(); } }); canvas.addEventListener('touchstart',(e)=>{e.preventDefault(); onCanvasClick(e,canvas,plane);},{passive:false}); canvas.addEventListener('touchmove',(e)=>{e.preventDefault(); onMouseMove(e,canvas,plane);},{passive:false}); canvas.addEventListener('touchend',(e)=>{e.preventDefault(); if(drawing&&currentPrimitive!==PRIMITIVE_TYPES.PLANE) endDrawingGeneric(e);}); canvas.addEventListener('touchcancel',(e)=>{ if(drawing&&currentPrimitive!==PRIMITIVE_TYPES.PLANE){ drawing=false; previewLine=null; scheduleRedraw(); } }); }); document.addEventListener('mousemove',(e)=>{if(drawing&&currentCanvas&&currentPrimitive!==PRIMITIVE_TYPES.PLANE) moveGeneric(e);}); document.addEventListener('touchmove',(e)=>{if(drawing&&currentCanvas&&currentPrimitive!==PRIMITIVE_TYPES.PLANE) moveGeneric(e);},{passive:false}); }
+        function getPointerPos(canvas, e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX, clientY;
+            if (e.touches && e.touches.length) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
+            else if (e.changedTouches && e.changedTouches.length) { clientX = e.changedTouches[0].clientX; clientY = e.changedTouches[0].clientY; }
+            else { clientX = e.clientX; clientY = e.clientY; }
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+        }
+        function clearAll(){ spatialObjects=[]; activeObject=null; drawing=false; previewLine=null; currentCanvas=null; planeBuilding=false; planeTempVertex={x:null,y:null,z:null}; planeMousePos=null; markConstraintsDirty(); scheduleRedraw(); }
+        function setPrimitive(type,btnId){ currentPrimitive=type; ['lineBtn','rectBtn','ellipseBtn','planeBtn'].forEach(id=>document.getElementById(id).classList.remove('mode-active')); document.getElementById(btnId).classList.add('mode-active'); if(activeObject&&!isObjectComplete(activeObject)) activeObject=null; drawing=false; previewLine=null; currentCanvas=null; planeBuilding=false; planeTempVertex={x:null,y:null,z:null}; scheduleRedraw(); }
+        function startNewObject(){ isNewObjectMode=true; colorIndex=(colorIndex+1)%colorPalette.length; currentColor=colorPalette[colorIndex]; document.getElementById('colorIndicator').style.backgroundColor=currentColor; document.getElementById('newObjectBtn').innerHTML=`+ Новый объект <div class="right-badge"><div id="colorIndicator" class="color-indicator" style="background-color: ${currentColor};"></div></div>`; if(activeObject&&!isObjectComplete(activeObject)) activeObject=null; planeBuilding=false; scheduleRedraw(); }
+        function updateAxes(){ axesContainer.innerHTML=''; const containerRect=container.getBoundingClientRect(); const canvasRect=canvasV.getBoundingClientRect(); const offsetX=canvasRect.left-containerRect.left; const offsetY=canvasRect.top-containerRect.top; const centerAbsX=offsetX+CANVAS_SIZE; const centerAbsY=offsetY+CANVAS_SIZE; const axisLen=CANVAS_SIZE+12; const orangeColor='#ff5500'; const addAxis=(dir,label,len,startOff)=>{ const line=document.createElement('div'); line.className='axis-line'; line.style.backgroundColor=orangeColor; const labelSpan=document.createElement('div'); labelSpan.className='axis-label'; labelSpan.textContent=label; labelSpan.style.color=orangeColor; if(dir==='left'){ line.style.width=`${len}px`; line.style.height='1.5px'; line.style.left=`${centerAbsX-len+startOff}px`; line.style.top=`${centerAbsY-0.75}px`; labelSpan.style.left=`${centerAbsX-len-12}px`; labelSpan.style.top=`${centerAbsY-9}px`; const arrow=document.createElement('div'); arrow.style.cssText=`position:absolute; width:0; height:0; border-top:4px solid transparent; border-bottom:4px solid transparent; border-right:6px solid ${orangeColor}; left:${centerAbsX-len-4}px; top:${centerAbsY-4}px;`; axesContainer.appendChild(arrow); } else if(dir==='right'){ line.style.width=`${len}px`; line.style.height='1.5px'; line.style.left=`${centerAbsX+startOff}px`; line.style.top=`${centerAbsY-0.75}px`; labelSpan.style.left=`${centerAbsX+len-9}px`; labelSpan.style.top=`${centerAbsY-10}px`; const arrow=document.createElement('div'); arrow.style.cssText=`position:absolute; width:0; height:0; border-top:4px solid transparent; border-bottom:4px solid transparent; border-left:6px solid ${orangeColor}; left:${centerAbsX+len-2}px; top:${centerAbsY-4}px;`; axesContainer.appendChild(arrow); } else if(dir==='down'){ line.style.width='1.5px'; line.style.height=`${len}px`; line.style.left=`${centerAbsX-0.75}px`; line.style.top=`${centerAbsY+startOff}px`; labelSpan.style.left=`${centerAbsX+5}px`; labelSpan.style.top=`${centerAbsY+len-5}px`; const arrow=document.createElement('div'); arrow.style.cssText=`position:absolute; width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-top:6px solid ${orangeColor}; left:${centerAbsX-4}px; top:${centerAbsY+len-3}px;`; axesContainer.appendChild(arrow); } else if(dir==='up'){ line.style.width='1.5px'; line.style.height=`${len}px`; line.style.left=`${centerAbsX-0.75}px`; line.style.top=`${centerAbsY-len+startOff}px`; labelSpan.style.left=`${centerAbsX+5}px`; labelSpan.style.top=`${centerAbsY-len-10}px`; const arrow=document.createElement('div'); arrow.style.cssText=`position:absolute; width:0; height:0; border-left:4px solid transparent; border-right:4px solid transparent; border-bottom:6px solid ${orangeColor}; left:${centerAbsX-4}px; top:${centerAbsY-len-3}px;`; axesContainer.appendChild(arrow); } axesContainer.appendChild(line); axesContainer.appendChild(labelSpan); }; addAxis('left','X',axisLen,0); addAxis('right','Y',axisLen,0); addAxis('down','Y',axisLen,0); addAxis('up','Z',axisLen,0); const origin=document.createElement('div'); origin.style.cssText=`position:absolute; width:4px; height:4px; background:${orangeColor}; border-radius:0px; left:${centerAbsX-2}px; top:${centerAbsY-2}px; box-shadow:0 0 0 2px #171a1f;`; axesContainer.appendChild(origin); }
+        function resizeCanvas(){ 
+            let targetSize; if(window.innerWidth<=768){ let base=Math.floor(Math.min(window.innerHeight*0.36,window.innerWidth*0.4)); targetSize=Math.max(180,base-40); GRID_STEP=20; targetSize=Math.floor(targetSize/GRID_STEP)*GRID_STEP; if(targetSize<140) targetSize=140; } else { targetSize=Math.floor(window.innerHeight*0.42); GRID_STEP=20; targetSize=Math.floor(targetSize/GRID_STEP)*GRID_STEP; targetSize=Math.min(680,Math.max(260,targetSize)); } if(targetSize===CANVAS_SIZE) return; CANVAS_SIZE=targetSize; canvasV.width=canvasH.width=canvasP.width=CANVAS_SIZE; canvasV.height=canvasH.height=canvasP.height=CANVAS_SIZE; 
+            const threeDiv = document.getElementById('threeContainer'); if(threeDiv && renderer) { threeDiv.style.width = `${CANVAS_SIZE}px`; threeDiv.style.height = `${CANVAS_SIZE}px`; renderer.setSize(CANVAS_SIZE, CANVAS_SIZE); if(camera) { camera.aspect = 1; camera.updateProjectionMatrix(); } }
+            updateProjections(); updateAxes(); updateAllClassifications(); refresh3D(); updateConnectionLines();
+        }
+        function init(){ resizeCanvas(); attachEvents(); document.getElementById('clearBtn').addEventListener('click',clearAll); document.getElementById('newObjectBtn').addEventListener('click',startNewObject); document.getElementById('lineBtn').addEventListener('click',()=>setPrimitive('line','lineBtn')); document.getElementById('rectBtn').addEventListener('click',()=>setPrimitive('rect','rectBtn')); document.getElementById('ellipseBtn').addEventListener('click',()=>setPrimitive('ellipse','ellipseBtn')); document.getElementById('planeBtn').addEventListener('click',()=>setPrimitive('plane','planeBtn')); document.getElementById('toggleLinesBtn').addEventListener('click',toggleLines); window.addEventListener('resize',()=>resizeCanvas()); updateProjections(); initThree(); startNewObject(); updateAllClassifications(); updateConnectionLines(); }
+        init();
+    })();
 </script>
 </body>
 </html>
