@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>IndF Guide · Метод секущей плоскости | ПИРАМИДА</title>
+    <link rel="icon" type="image/png" href="/icon.png">
+    <link rel="apple-touch-icon" href="/icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Major+Mono+Display&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        :root {
+            --metal-base: #171a1f;
+            --metal-panel: #1f232a;
+            --metal-border: #3a3e48;
+            --text-primary: #eef2f8;
+            --text-secondary: #9ca3b5;
+            --orange-pulse: #ff5500;
+            --orange-active: #e6451a;
+            --orange-glow: #b53a0a;
+            --orange-preview: #ff8c42;
+            --cyan-system: #00a6c4;
+            --warning: #ffb347;
+        }
+        body {
+            background-color: var(--metal-base);
+            background-image: repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 14px);
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+            line-height: 1.55;
+        }
+        .main-container {
+            max-width: 1400px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2rem 2rem 3rem;
+        }
+        .tech-header {
+            margin-bottom: 2rem;
+            border-bottom: 1px solid var(--metal-border);
+            padding-bottom: 1rem;
+        }
+        h1 {
+            font-family: 'Major Mono Display', monospace;
+            font-weight: 400;
+            font-size: 2.2rem;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+        .title-accent {
+            color: var(--orange-pulse);
+        }
+        .badge-method {
+            background: #2a2e38;
+            font-size: 0.85rem;
+            padding: 0.2rem 1rem;
+            border-radius: 20px;
+            color: var(--cyan-system);
+        }
+        .subhead {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            border-left: 3px solid var(--orange-glow);
+            padding-left: 1rem;
+            margin-top: 0.6rem;
+        }
+        .steps-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5rem;
+            margin: 2.5rem 0 2rem;
+        }
+        .step-card {
+            background: var(--metal-panel);
+            border: 1px solid var(--metal-border);
+            border-radius: 6px;
+            overflow: hidden;
+            transition: all 0.1s ease;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+        .step-card:hover {
+            border-color: var(--orange-active);
+        }
+        .step-header {
+            background: rgba(0,0,0,0.35);
+            padding: 1rem 1.8rem;
+            border-left: 6px solid var(--orange-pulse);
+            display: flex;
+            align-items: baseline;
+            flex-wrap: wrap;
+            gap: 1rem;
+            border-bottom: 1px solid var(--metal-border);
+        }
+        .step-number {
+            font-family: 'Major Mono Display', monospace;
+            font-size: 1.7rem;
+            font-weight: 600;
+            color: var(--orange-pulse);
+        }
+        .step-title {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+        .step-sub {
+            font-size: 0.7rem;
+            background: #2a2e3c;
+            padding: 0.2rem 0.7rem;
+            border-radius: 14px;
+            color: var(--cyan-system);
+        }
+        .step-body {
+            padding: 1.8rem 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .desc-text {
+            font-size: 0.95rem;
+            color: #dbdfe8;
+            background: rgba(0,166,196,0.05);
+            padding: 1rem 1.2rem;
+            border-left: 2px solid var(--cyan-system);
+            border-radius: 0 4px 4px 0;
+        }
+        .desc-text strong {
+            color: var(--orange-preview);
+        }
+        .img-container {
+            background: #0c0f16;
+            border-radius: 8px;
+            padding: 0.75rem;
+            text-align: center;
+            border: 1px solid var(--metal-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        /* АВТОРАЗМЕР ПО ВЫСОТЕ ОКНА */
+        .figure-img {
+            max-width: 100%;
+            width: auto;
+            height: auto;
+            max-height: 45vh;
+            object-fit: contain;
+            border-radius: 6px;
+            display: block;
+            transition: filter 0.1s;
+        }
+        .images-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            justify-content: center;
+            margin-top: 0.5rem;
+        }
+        .images-row .img-container {
+            flex: 1 1 0;
+            min-width: 180px;
+            max-width: 100%;
+        }
+        .images-row .figure-img {
+            max-height: 38vh;
+        }
+        /* Скрываем стандартные подписи картинок */
+        .img-caption {
+            display: none;
+        }
+        /* ===== СПЕЦИАЛЬНЫЙ БЛОК ДЛЯ ПОДШАГОВ 2.1 / 2.2 / 2.3 : текст слева, картинка справа ===== */
+        .split-layout {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 2rem;
+            align-items: flex-start;
+        }
+        .split-text {
+            flex: 1.2;
+            min-width: 260px;
+        }
+        .split-media {
+            flex: 0.9;
+            min-width: 240px;
+            display: flex;
+            justify-content: center;
+        }
+        .split-media .img-container {
+            width: 100%;
+            margin: 0;
+            padding: 0.6rem;
+        }
+        .split-media .figure-img {
+            max-height: 42vh;
+            width: auto;
+            margin: 0 auto;
+        }
+        /* стили для подшагов внутри шага 2 */
+        .substep-block {
+            background: rgba(0,0,0,0.2);
+            border-left: 3px solid var(--orange-pulse);
+            padding: 1rem 1.2rem;
+            margin-bottom: 1.2rem;
+            border-radius: 0 8px 8px 0;
+        }
+        .substep-title {
+            font-family: 'Major Mono Display', monospace;
+            font-size: 1rem;
+            color: var(--orange-preview);
+            margin-bottom: 0.5rem;
+            letter-spacing: 0.5px;
+        }
+        .substep-title i {
+            margin-right: 8px;
+            color: var(--cyan-system);
+        }
+        .substep-desc {
+            font-size: 0.9rem;
+            color: #cfd5e2;
+            line-height: 1.5;
+        }
+        .notation-badge {
+            background: #1f2a2f;
+            display: inline-block;
+            padding: 0.2rem 0.7rem;
+            border-radius: 16px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            color: var(--orange-preview);
+            margin-right: 0.5rem;
+        }
+        .note-box {
+            background: #13161f;
+            border: 1px solid var(--warning);
+            padding: 0.8rem 1.2rem;
+            border-radius: 4px;
+            display: flex;
+            gap: 0.8rem;
+            align-items: flex-start;
+            font-size: 0.85rem;
+        }
+        .note-box i {
+            color: var(--warning);
+        }
+        .convention {
+            background: #1a1e2a;
+            padding: 0.8rem 1.2rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            display: inline-block;
+            border: 1px dashed var(--cyan-system);
+        }
+        .telemetry-bar {
+            background: #0f1117;
+            border-top: 2px solid var(--orange-pulse);
+            padding: 0.7rem 1.5rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            margin-top: 2.5rem;
+        }
+        hr {
+            border-color: var(--metal-border);
+            margin: 1rem 0;
+        }
+        @media (max-width: 780px) {
+            .main-container {
+                padding: 1.2rem;
+            }
+            .step-header {
+                padding: 0.8rem 1.2rem;
+            }
+            .step-body {
+                padding: 1.2rem;
+            }
+            .step-title {
+                font-size: 1.1rem;
+            }
+            .figure-img {
+                max-height: 40vh;
+            }
+            .split-layout {
+                flex-direction: column;
+            }
+            .split-media .figure-img {
+                max-height: 38vh;
+            }
+        }
+        @media (max-width: 550px) {
+            .figure-img {
+                max-height: 35vh;
+            }
+        }
+        @media (orientation: landscape) and (max-height: 600px) {
+            .figure-img {
+                max-height: 55vh;
+            }
+            .split-media .figure-img {
+                max-height: 52vh;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <div class="tech-header">
+        <h1>
+            <i class="fas fa fa-chart-line" style="color: #ff5500;"></i>
+            МЕТОД СЕКУЩЕЙ ПЛОСКОСТИ <span class="title-accent">// ПИРАМИДА</span>
+            <span class="badge-method"><i class="fas fa-cut"></i> построение линии пересечения</span>
+        </h1>
+        <div class="subhead">
+            алгоритм секущей плоскости для n-угольной пирамиды · проекционная геометрия · линии связи и видимость
+        </div>
+    </div>
+
+    <div class="steps-grid">
+        <!-- ШАГ 1 — определение точек пересечения (три картинки) -->
+        <div class="step-card">
+            <div class="step-header">
+                <span class="step-number">01</span>
+                <span class="step-title">Определение точек пересечения</span>
+                <span class="step-sub"><i class="fas fa-bullseye"></i> грани · рёбра</span>
+            </div>
+            <div class="step-body">
+                <div class="desc-text">
+                    <strong><i class="fas fa-shapes"></i> Правило:</strong> При пересечении секущей плоскостью <strong>двух граней</strong> получаем <strong>2 точки</strong>. Если плоскость пересекает <strong>краевое ребро</strong> — <strong>1 точка</strong>.<br>
+                    <span style="color:var(--orange-preview);">→ Все найденные точки наносятся на проекции (фронтальную и горизонтальную).</span>
+                </div>
+                <div class="images-row">
+                    <div class="img-container">
+                        <img class="figure-img" src="1.png" alt="пересечение двух граней → 2 точки" 
+                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'260\' viewBox=\'0 0 400 260\'%3E%3Crect width=\'400\' height=\'260\' fill=\'%231a1e26\'/%3E%3Ctext x=\'40\' y=\'120\' fill=\'%23ff8c42\' font-size=\'14\'%3Eпересечение 2 граней%3C/text%3E%3Ctext x=\'40\' y=\'150\' fill=\'%239ca3b5\' font-size=\'12\'%3E→ 2 точки%3C/text%3E%3C/svg%3E';">
+                    </div>
+                    <div class="img-container">
+                        <img class="figure-img" src="2.png" alt="пересечение краевого ребра → 1 точка"
+                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'260\' viewBox=\'0 0 400 260\'%3E%3Crect width=\'400\' height=\'260\' fill=\'%231a1e26\'/%3E%3Ctext x=\'40\' y=\'120\' fill=\'%23ff8c42\' font-size=\'14\'%3Eкраевое ребро%3C/text%3E%3Ctext x=\'40\' y=\'150\' fill=\'%239ca3b5\' font-size=\'12\'%3E→ 1 точка%3C/text%3E%3C/svg%3E';">
+                    </div>
+                    <div class="img-container">
+                        <img class="figure-img" src="3.png" alt="нанесение всех точек на проекции"
+                             onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'400\' height=\'260\' viewBox=\'0 0 400 260\'%3E%3Crect width=\'400\' height=\'260\' fill=\'%231a1e26\'/%3E%3Ctext x=\'40\' y=\'120\' fill=\'%23ff8c42\' font-size=\'14\'%3Eнанесение точек%3C/text%3E%3Ctext x=\'40\' y=\'150\' fill=\'%239ca3b5\' font-size=\'12\'%3Eфронталь / горизонталь%3C/text%3E%3C/svg%3E';">
+                    </div>
+                </div>
+                <div class="convention">
+                    <i class="fas fa-pencil-ruler"></i> <strong>Обозначение:</strong> точки на <strong>фронтальной проекции</strong> — один штрих (<span class="notation-badge">X'</span>), на <strong>профильной</strong> — три штриха (<span class="notation-badge">X‴</span>).<br>
+                    <span style="font-size:0.8rem;">Временные вспомогательные точки обозначаются как <strong>t'</strong> (фронталь) и <strong>t</strong> (горизонталь).</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ШАГ 2 — раздроблен на три подшага: 2.1, 2.2, 2.3 (каждый со своей картинкой справа) -->
+        <div class="step-card">
+            <div class="step-header">
+                <span class="step-number">02</span>
+                <span class="step-title">Проецирование точек сечения (метод лучей)</span>
+                <span class="step-sub"><i class="fas fa-arrow-down"></i> три этапа построения</span>
+            </div>
+            <div class="step-body">
+                <!-- ПОДШАГ 2.1 -->
+                <div class="split-layout">
+                    <div class="split-text">
+                        <div class="substep-block">
+                            <div class="substep-title"><i class="fas fa-arrow-up"></i> 2.1 — Луч из вершины через точку</div>
+                            <div class="substep-desc">
+                                Из вершины пирамиды <strong>(S')</strong> на фронтальной проекции проводим прямую через заданную точку <strong>X'</strong> (точку выреза на грани) до пересечения с основанием пирамиды. 
+                                Отмечаем вспомогательную точку <strong>t'</strong> на пересечении с основанием (на фронтальной проекции).
+                            </div>
+                        </div>
+                    </div>
+                    <div class="split-media">
+                        <div class="img-container">
+                            <img class="figure-img" src="4.png" alt="2.1 луч из вершины через точку"
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'340\' height=\'200\' viewBox=\'0 0 340 260\'%3E%3Crect width=\'340\' height=\'260\' fill=\'%231a1e26\'/%3E%3Ctext x=\'30\' y=\'120\' fill=\'%23ff8c42\' font-size=\'13\'%3Eлуч S' → X' → t'%3C/text%3E%3C/svg%3E';">
+                        </div>
+                    </div>
+                </div>
+                <!-- ПОДШАГ 2.2 -->
+                <div class="split-layout">
+                    <div class="split-text">
+                        <div class="substep-block">
+                            <div class="substep-title"><i class="fas fa-arrow-down"></i> 2.2 — Перпендикуляр к основанию</div>
+                            <div class="substep-desc">
+                                Опускаем перпендикуляр из полученной точки <strong>t'</strong> (фронтальная проекция) к горизонтальной проекции основания. 
+                                На пересечении с линиями основания отмечаем точки, фиксирующие положение <strong>t</strong> на горизонтальной плоскости.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="split-media">
+                        <div class="img-container">
+                            <img class="figure-img" src="5.png" alt="2.2 перпендикуляр к основанию"
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'340\' height=\'200\' viewBox=\'0 0 400 260\'%3E%3Crect width=\'340\' height=\'260\' fill=\'%231a1e26\'/%3E%3Ctext x=\'30\' y=\'120\' fill=\'%23ff8c42\' font-size=\'13\'%3E⟂ линии связи t' → t%3C/text%3E%3C/svg%3E';">
+                        </div>
+                    </div>
+                </div>
+                <!-- ПОДШАГ 2.3 -->
+                <div class="split-layout">
+                    <div class="split-text">
+                        <div class="substep-block">
+                            <div class="substep-title"><i class="fas fa-draw-polygon"></i> 2.3 — Соединение с вершиной и проецирование исходной точки</div>
+                            <div class="substep-desc">
+                                На горизонтальной проекции соединяем полученную точку <strong>t</strong> с вершиной <strong>S</strong>. 
+                                Из исходной точки <strong>X'</strong> (фронталь) опускаем перпендикуляр (линию связи) на горизонтальную плоскость. 
+                                Точка пересечения этого перпендикуляра с построенной линией <strong>S-t</strong> даёт искомую горизонтальную проекцию <strong>X</strong> точки сечения.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="split-media">
+                        <div class="img-container">
+                            <img class="figure-img" src="6.png" alt="2.3 соединение с вершиной и проецирование"
+                                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'340\' height=\'200\' viewBox=\'0 0 400 260\'%3E%3Crect width=\'340\' height=\'260\' fill=\'%231a1e26\'/%3E%3Ctext x=\'30\' y=\'120\' fill=\'%23ff8c42\' font-size=\'13\'%3ES → t → X%3C/text%3E%3C/svg%3E';">
+                        </div>
+                    </div>
+                </div>
+                <div class="note-box">
+                    <i class="fas fa-lightbulb"></i>
+                    <span><strong>Вспомогательные обозначения:</strong> временная точка на фронтальной проекции — <strong>t'</strong>, её горизонтальная проекция — <strong>t</strong>. Искомая точка выреза на фронтали — <strong>X'</strong>, её горизонтальная проекция — <strong>X</strong>. Метод позволяет точно построить любую точку сечения на горизонтальной проекции.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ШАГ 3 — обход контура + видимость (рисунок справа не требуется, но дадим картинку) -->
+        <div class="step-card">
+            <div class="step-header">
+                <span class="step-number">03</span>
+                <span class="step-title">Построение контура сечения · видимость</span>
+                <span class="step-sub"><i class="fas fa-eye"></i> анализ связей</span>
+            </div>
+            <div class="step-body">
+                <div class="desc-text">
+                    <strong>Обход контура:</strong> Соединяются точки, между которыми есть <strong>связь</strong> (принадлежность одной грани). Учитывается <strong>видимость</strong>: видимые участки — сплошная линия, невидимые — штриховая. Аналогично на горизонтальной проекции соединяем точки в том же порядке.
+                </div>
+                <div class="img-container">
+                    <img class="figure-img" src="7.png" alt="обход контура с учётом видимости"
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'500\' height=\'280\' viewBox=\'0 0 500 280\'%3E%3Crect width=\'500\' height=\'280\' fill=\'%231a1e26\'/%3E%3Ctext x=\'30\' y=\'120\' fill=\'%23ff8c42\' font-size=\'14\'%3Eобход контура пирамиды%3C/text%3E%3Ctext x=\'30\' y=\'150\' fill=\'%239ca3b5\' font-size=\'12\'%3Eвидимость: сплошная / штриховая%3C/text%3E%3C/svg%3E';">
+                </div>
+                <div class="convention">
+                    <i class="fas fa-low-vision"></i> <strong>Видимость:</strong> отрезок видим, если принадлежит видимой части грани. Невидимые участки показываются штриховой линией (пунктир). На горизонтальной проекции видимость определяется положением относительно очерка пирамиды.
+                </div>
+            </div>
+        </div>
+
+        <!-- ШАГ 4 — третья проекция (профильная) -->
+        <div class="step-card">
+            <div class="step-header">
+                <span class="step-number">04</span>
+                <span class="step-title">Построение третьей проекции (профильной)</span>
+                <span class="step-sub"><i class="fas fa-cube"></i> проекция на π₃</span>
+            </div>
+            <div class="step-body">
+                <div class="desc-text">
+                    <strong>Завершение:</strong> точки переносятся на <strong>профильную проекцию</strong> линиями связи (горизонтальные линии связи с фронтальной проекции и вертикальные — с горизонтальной). Соединяются в том же порядке, что и на горизонтальной проекции, с учётом видимости.
+                </div>
+                <div class="img-container">
+                    <img class="figure-img" src="8" alt="профильная проекция пирамиды"
+                         onerror="this.src='data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'500\' height=\'280\' viewBox=\'0 0 500 280\'%3E%3Crect width=\'500\' height=\'280\' fill=\'%231a1e26\'/%3E%3Ctext x=\'30\' y=\'120\' fill=\'%23ff8c42\' font-size=\'14\'%3Eпрофильная проекция π₃%3C/text%3E%3Ctext x=\'30\' y=\'150\' fill=\'%239ca3b5\' font-size=\'12\'%3Eперенос точек → X‴%3C/text%3E%3C/svg%3E';">
+                </div>
+                <div class="note-box">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                    <span>Третья проекция завершает эпюр: координаты точек переносятся с горизонтальной и фронтальной проекций. Обозначение профильных проекций — три штриха (X‴).</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Сводный алгоритм (памятка) -->
+    <div style="margin-top: 1rem; background: #0b0e14; border-radius: 8px; padding: 1.2rem 1.8rem; border: 1px solid var(--metal-border);">
+        <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 1rem;">
+            <i class="fas fa-list-ol" style="color: var(--orange-pulse); font-size: 1.6rem;"></i>
+            <span style="font-family: 'Major Mono Display'; font-size: 1.2rem;">Сводный алгоритм (сечение пирамиды)</span>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: space-between;">
+            <div style="flex:1; min-width: 160px;"><div style="color: var(--cyan-system);">1. Анализ</div><div style="font-size: 0.8rem;">Определить пересекаемые грани/рёбра → количество точек</div></div>
+            <div style="flex:1; min-width: 160px;"><div style="color: var(--cyan-system);">2.1 → 2.3</div><div style="font-size: 0.8rem;">Метод лучей (S → t) и проецирование точек X' → X</div></div>
+            <div style="flex:1; min-width: 160px;"><div style="color: var(--cyan-system);">3. Соединение</div><div style="font-size: 0.8rem;">Обход контура с учётом видимости</div></div>
+            <div style="flex:1; min-width: 160px;"><div style="color: var(--cyan-system);">4. Профиль</div><div style="font-size: 0.8rem;">Построение третьей проекции (π₃)</div></div>
+        </div>
+        <hr>
+        <div class="convention" style="display: inline-flex; gap: 1rem; flex-wrap: wrap;">
+            <span><i class="fas fa-tag"></i> <strong>Обозначения:</strong> X' (фронталь), X (горизонталь), X‴ (профиль)</span>
+            <span><i class="fas fa-ruler"></i> Вспомогательные: t' (фронт.), t (гориз.) — на пересечении луча с основанием</span>
+            <span><i class="fas fa-border-all"></i> Две грани → 2 точки, ребро → 1 точка</span>
+        </div>
+    </div>
+</div>
+
+<div class="telemetry-bar">
+    <div><i class="fas fa-microchip" style="color: #00a6c4;"></i> <span style="margin-left: 8px;">метод секущей плоскости · пирамида | полный алгоритм с детальным шагом 2 (2.1 → 2.2 → 2.3)</span></div>
+    <div style="color: var(--text-secondary); font-size: 0.7rem;"><i class="fas fa-chalkboard"></i> начертательная геометрия · инженерный практикум</div>
+</div>
+
+<script>
+    (function() {
+        const allImages = document.querySelectorAll('.figure-img');
+        allImages.forEach(img => {
+            img.addEventListener('click', () => {
+                img.style.filter = 'drop-shadow(0 0 4px #ff5500)';
+                setTimeout(() => { img.style.filter = ''; }, 200);
+                if (navigator.vibrate) navigator.vibrate(20);
+            });
+        });
+        
+        function enforceImageScaling() {
+            const imgs = document.querySelectorAll('.figure-img');
+            imgs.forEach(img => {
+                if (img.style.width && img.style.width !== 'auto') img.style.width = 'auto';
+                if (img.style.height && img.style.height !== 'auto') img.style.height = 'auto';
+            });
+        }
+        window.addEventListener('resize', enforceImageScaling);
+        window.addEventListener('load', enforceImageScaling);
+    })();
+</script>
+</body>
+</html>
