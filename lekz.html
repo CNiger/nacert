@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>IndF Workbench | Лекции</title>
+    <link rel="icon" type="image/png" href="/icon.png">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Major+Mono+Display&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --metal-base: #171a1f;
+            --metal-panel: #1f232a;
+            --metal-border: #3a3e48;
+            --text-primary: #eef2f8;
+            --text-secondary: #9ca3b5;
+            --orange-pulse: #ff5500;
+            --orange-active: #e6451a;
+            --success: #4caf50;
+        }
+
+        body {
+            background-color: var(--metal-base);
+            background-image: repeating-linear-gradient(
+                45deg,
+                rgba(255, 255, 255, 0.02) 0px,
+                rgba(255, 255, 255, 0.02) 1px,
+                transparent 1px,
+                transparent 12px
+            );
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .main-container {
+            max-width: 900px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .nav-back {
+            margin-bottom: 2rem;
+        }
+        .back-link {
+            color: var(--text-secondary);
+            font-family: monospace;
+            font-size: 0.85rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,85,0,0.08);
+            padding: 0.4rem 1rem;
+            border-radius: 3px;
+            border: 1px solid var(--metal-border);
+            transition: 0.1s linear;
+        }
+        .back-link:hover {
+            border-color: var(--orange-active);
+            color: var(--orange-pulse);
+            background: rgba(255,85,0,0.15);
+        }
+
+        h1 {
+            font-family: 'Major Mono Display', monospace;
+            font-size: 2rem;
+            font-weight: 400;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+        .title-accent {
+            color: var(--orange-pulse);
+        }
+        .subhead {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            border-left: 3px solid var(--orange-pulse);
+            padding-left: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        /* Простой список */
+        .lecture-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin: 2rem 0;
+        }
+
+        .lecture-item {
+            background: var(--metal-panel);
+            border: 1px solid var(--metal-border);
+            border-radius: 3px;
+            padding: 1rem 1.5rem;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            transition: all 0.1s ease;
+            display: block;
+            position: relative;
+        }
+        .lecture-item:hover {
+            border-color: var(--orange-active);
+            transform: translateX(4px);
+            background: #232830;
+        }
+
+        .telemetry {
+            background: #0f1117;
+            border-top: 2px solid var(--orange-pulse);
+            padding: 0.6rem 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 2rem;
+        }
+        .telemetry-prefix {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        @keyframes powerFlash {
+            0% { box-shadow: 0 0 0 0 var(--orange-pulse); border-color: var(--orange-pulse); }
+            100% { box-shadow: 0 0 0 0 rgba(255,85,0,0); border-color: var(--metal-border); }
+        }
+        .power-flash {
+            animation: powerFlash 0.2s ease-out;
+        }
+
+        @media (max-width: 600px) {
+            .main-container { padding: 1.2rem; }
+            h1 { font-size: 1.5rem; }
+            .lecture-item { padding: 0.8rem 1.2rem; font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="main-container">
+    <div class="nav-back">
+        <a href="/" class="back-link" id="backToWorkbench">
+            <i class="fas fa-arrow-left"></i> <span>WORKBENCH</span>
+        </a>
+    </div>
+
+    <h1>IND‑F<span class="title-accent">//ЛЕКЦИИ</span></h1>
+    <div class="subhead">инженерная геометрия · модули</div>
+
+    <!-- Простой вертикальный список без иконок -->
+    <div class="lecture-list">
+        <a href="/lek/pyramid" class="lecture-item">ВЫРЕЗЫ НА ПИРАМИДАХ</a>
+        <a href="/lek/prism" class="lecture-item">ВЫРЕЗЫ НА ПРИЗМАХ</a>
+        <a href="#" class="lecture-item" data-name="Вырезы на конусах">ВЫРЕЗЫ НА КОНУСАХ</a>
+        <a href="#" class="lecture-item" data-name="Вырезы на цилиндрах">ВЫРЕЗЫ НА ЦИЛИНДРАХ</a>
+        <a href="#" class="lecture-item" data-name="Вырезы на шаре">ВЫРЕЗЫ НА ШАРЕ</a>
+    </div>
+</div>
+
+<div class="telemetry">
+    <div>
+        <span class="telemetry-prefix">[LEC]</span>
+        <span id="telemetryMessage">лекционный зал</span>
+    </div>
+    <div style="color:#9ca3b5; font-size:0.65rem;">
+        <i class="fas fa-graduation-cap"></i> 5 модулей
+    </div>
+</div>
+
+<script>
+    (function() {
+        const telemetryMsg = document.getElementById('telemetryMessage');
+        const items = document.querySelectorAll('.lecture-item');
+        let timeout;
+
+        function setMsg(text) {
+            if (telemetryMsg) telemetryMsg.innerText = text;
+        }
+
+        function addFlash(el) {
+            el.classList.add('power-flash');
+            setTimeout(() => el.classList.remove('power-flash'), 200);
+        }
+
+        items.forEach(item => {
+            const name = item.getAttribute('data-name') || item.innerText.trim();
+            item.addEventListener('mouseenter', () => {
+                if (timeout) clearTimeout(timeout);
+                setMsg(name);
+            });
+            item.addEventListener('mouseleave', () => {
+                timeout = setTimeout(() => setMsg('лекционный зал'), 150);
+            });
+            item.addEventListener('click', (e) => {
+                addFlash(item);
+                setMsg(`загрузка: ${name}`);
+                if (navigator.vibrate) navigator.vibrate(30);
+            });
+        });
+
+        const backBtn = document.getElementById('backToWorkbench');
+        if (backBtn) {
+            backBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                addFlash(backBtn);
+                setMsg('возврат');
+                setTimeout(() => { window.location.href = '/'; }, 40);
+            });
+        }
+    })();
+</script>
+</body>
+</html>
