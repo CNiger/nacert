@@ -125,10 +125,9 @@ async def shutdown_event():
         print("Фоновая очистка остановлена")
 
 # ------------------ Статические страницы ------------------
-from fastapi.staticfiles import StaticFiles
-
-# Где-то после монтирования сервисов, но до @app.get("/")
-app.mount("/lek", StaticFiles(directory="lek"), name="lek")
+@app.get("/lekz.html")
+def lekz():
+    return FileResponse("lekz.html")
 
 @app.get("/")
 def start():
