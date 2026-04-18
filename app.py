@@ -125,16 +125,14 @@ async def shutdown_event():
         print("Фоновая очистка остановлена")
 
 # ------------------ Статические страницы ------------------
+from fastapi.staticfiles import StaticFiles
+
+# Монтируем папку с лекциями (включая картинки)
+app.mount("/lek", StaticFiles(directory="lek", html=True), name="lek")
+
 @app.get("/lekz.html")
 def lekz():
     return FileResponse("lekz.html")
-
-@app.get("/lek/{name}")
-def lecture(name: str):
-    path = Path(__file__).parent / "lek" / name / "index.html"
-    if path.exists():
-        return FileResponse(path)
-    return {"error": f"Лекция '{name}' не найдена"}, 404
 
 @app.get("/")
 def start():
