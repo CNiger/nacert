@@ -392,7 +392,7 @@
         loadingOverlay.style.display = 'flex';
         try {
             // ИСПРАВЛЕНО: относительный путь вместо абсолютного
-            const res = await fetch('./api/intersect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body1, body2 }) });
+            const res = await fetch('/sek/api/intersect', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ body1, body2 }) });
             if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
             if (data.success) {
