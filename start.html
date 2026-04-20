@@ -6,29 +6,29 @@
     <title>IndF Workbench | Инженерная геометрия 3D</title>
     
     <!-- ========== SEO / META TAGS ========== -->
-    <meta name="description" content="IndF Workbench — профессиональные онлайн-инструменты для инженерной геометрии: вырезы на телах вращения и многогранниках, аксонометрия, эпюр Монжа, развёртки, лекции.">
-    <meta name="keywords" content="инженерная геометрия, начертательная геометрия, 3D моделирование, эпюр Монжа, аксонометрия, развёртки, вырезы на телах вращения, IndF, WORKBENCH">
+    <meta name="description" content="IndF Workbench — профессиональные онлайн-инструменты для инженерной геометрии: вырезы на телах вращения и многогранниках, аксонометрия, эпюр Монжа, развёртки, проверка STEP моделей, лекции.">
+    <meta name="keywords" content="инженерная геометрия, начертательная геометрия, 3D моделирование, эпюр Монжа, аксонометрия, развёртки, вырезы на телах вращения, проверка STEP, верификация 3D, IndF, WORKBENCH">
     <meta name="author" content="IndF">
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="#171a1f">
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:title" content="IndF Workbench — инструменты инженерной геометрии">
-    <meta property="og:description" content="Полномасштабная рабочая среда для 3D-конструктора: сечения, развёртки, аксонометрия, интерактивный эпюр.">
-    <meta property="og:image" content="https://www.injgraf.ru/og-image.png"> <!-- замените на реальный путь к превью -->
+    <meta property="og:description" content="Полномасштабная рабочая среда для 3D-конструктора: сечения, развёртки, аксонометрия, интерактивный эпюр, верификация STEP моделей.">
+    <meta property="og:image" content="https://www.injgraf.ru/og-image.png">
     <meta property="og:url" content="https://www.injgraf.ru/">
     <meta property="og:locale" content="ru_RU">
     <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="IndF Workbench — инженерная геометрия онлайн">
-    <meta name="twitter:description" content="Интерактивные модули для вырезов, пересечений и развёрток.">
+    <meta name="twitter:description" content="Интерактивные модули для вырезов, пересечений, развёрток и проверки STEP моделей.">
     <meta name="twitter:image" content="https://www.injgraf.ru/og-image.png">
     <!-- ========== END SEO ========== -->
 
-    <!-- Favicon: .ico с прозрачным фоном (32x32 или 64x64) -->
+    <!-- Favicon -->
     <link rel="icon" type="image/x-icon" href="favicon.ico">
     <link rel="shortcut icon" href="favicon.ico">
-    <link rel="icon" type="image/png" sizes="128x128" href="favicon.png"> <!-- подстраховка -->
+    <link rel="icon" type="image/png" sizes="128x128" href="favicon.png">
     
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Major+Mono+Display&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
@@ -42,12 +42,12 @@
       gtag('config', 'G-TGTG4LNCMM');
     </script>
     <style>
-        /* ваш существующий стиль без изменений (полностью скопирован из оригинального файла) */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
         :root {
             --metal-base: #171a1f;
             --metal-panel: #1f232a;
@@ -65,6 +65,7 @@
             --error: #ff5e5e;
             --warning: #ffb347;
         }
+
         body {
             background-color: var(--metal-base);
             background-image: repeating-linear-gradient(
@@ -80,6 +81,7 @@
             display: flex;
             flex-direction: column;
         }
+
         .main-container {
             max-width: 1600px;
             width: 100%;
@@ -87,6 +89,7 @@
             padding: 2rem 2rem 1rem;
             flex: 1;
         }
+
         h1 {
             font-family: 'Major Mono Display', monospace;
             font-weight: 400;
@@ -112,6 +115,7 @@
             font-family: monospace;
             letter-spacing: 0.3px;
         }
+
         .signal-canvas {
             width: 100%;
             height: 56px;
@@ -120,12 +124,14 @@
             margin: 0.5rem 0 2rem 0;
             border-radius: 2px;
         }
+
         .tools-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
             gap: 2rem;
             margin: 1.8rem 0 2.5rem;
         }
+
         .tool-card {
             background: var(--metal-panel);
             border: 1px solid var(--metal-border);
@@ -205,6 +211,7 @@
             color: var(--cyan-system);
             letter-spacing: 0.3px;
         }
+
         .telemetry {
             background: #0f1117;
             border-top: 2px solid var(--orange-pulse);
@@ -234,6 +241,7 @@
             color: var(--text-primary);
             font-weight: 500;
         }
+
         @keyframes powerFlash {
             0% { box-shadow: 0 0 0 0 var(--orange-pulse), inset 0 0 0 1px rgba(255,85,0,0.9); border-color: var(--orange-pulse); }
             70% { box-shadow: 0 0 0 16px rgba(255,85,0,0), inset 0 0 0 3px rgba(255,85,0,0.2); border-color: var(--orange-pulse); }
@@ -242,10 +250,12 @@
         .power-flash {
             animation: powerFlash 0.22s cubic-bezier(0.2, 0.9, 0.4, 1.1);
         }
+
         .tool-card:focus-visible {
             outline: 2px solid var(--orange-pulse);
             outline-offset: 3px;
         }
+
         @media (max-width: 800px) {
             .main-container { padding: 1.2rem; }
             h1 { font-size: 1.8rem; }
@@ -257,6 +267,7 @@
             .tool-title { font-size: 1rem; }
             .telemetry { padding: 0.6rem 1rem; flex-direction: column; align-items: flex-start; gap: 0.5rem; }
         }
+
         @media (min-width: 1400px) {
             .tools-grid {
                 grid-template-columns: repeat(4, 1fr);
@@ -327,11 +338,11 @@
             <div class="tool-desc">Видео-лекции, методические материалы по инженерной графике и параметрическому моделированию.</div>
             <div class="tool-tag"><i class="fas fa-graduation-cap"></i> технологический курс</div>
         </a>
-        <a href="#" class="tool-card" data-tool="GUIDE" data-name="Гайд">
-            <div class="tool-icon"><i class="fas fa-map-signs"></i></div>
-            <div class="tool-title">ГАЙД</div>
-            <div class="tool-desc">Быстрый старт, навигация, горячие клавиши и эффективное моделирование в среде IndF.</div>
-            <div class="tool-tag"><i class="fas fa-book-open"></i> система поддержки</div>
+        <a href="/check" class="tool-card" data-tool="PROVERKA" data-name="Проверка">
+            <div class="tool-icon"><i class="fas fa-check-circle"></i></div>
+            <div class="tool-title">ПРОВЕРКА</div>
+            <div class="tool-desc">Автоматическое сравнение 3D-моделей с эталоном. Воксельный анализ, D2/A3 гистограммы, рёбра, скругления, круглые основания.</div>
+            <div class="tool-tag"><i class="fas fa-chart-line"></i> верификация геометрии</div>
         </a>
     </div>
 </div>
