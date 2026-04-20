@@ -98,23 +98,24 @@ class StepComparator:
         return d2, a3
 
     def _count_edges(self, shape):
-        edges = list(shape.edges())
+        edges = shape.edges().vals()
         straight = sum(1 for e in edges if 'LINE' in str(e.geomType()).upper())
         return {'total': len(edges), 'straight': straight, 'curved': len(edges)-straight}
 
     def _detect_fillets(self, shape):
-        faces = list(shape.faces())
+        faces = shape.faces().vals()
         curved = sum(1 for f in faces if any(t in str(f.geomType()).upper() for t in ('CYLINDER','SPHERE','CONE','TORUS')))
         total = len(faces)
         return {'total_faces': total, 'curved_faces': curved, 'ratio': curved/total if total else 0}
 
     def _detect_circles(self, shape):
         circles = []
-        for f in list(shape.faces()):
+        faces = shape.faces().vals()
+        for f in faces:
             if 'PLANE' in str(f.geomType()).upper():
                 wire = f.outerWire()
-                edges = list(wire.edges())
-                if len(edges)==1 and 'CIRCLE' in str(edges[0].geomType()).upper():
+                edges = wire.edges().vals()
+                if len(edges) == 1 and 'CIRCLE' in str(edges[0].geomType()).upper():
                     circles.append(edges[0].radius())
         return circles
 
@@ -228,5 +229,4 @@ async def index():
         return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
     return HTMLResponse("<h1>STEP Checker</h1><p>Интерфейс не найден, но API работает</p>")
 
-# Монтируем статику (если нужно)
 app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
