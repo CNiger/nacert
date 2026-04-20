@@ -13,6 +13,9 @@ import numpy as np
 import cadquery as cq
 import trimesh
 from scipy.stats import wasserstein_distance
+from OCC.Core.TopExp import TopExp_Explorer
+from OCC.Core.TopAbs import TopAbs_EDGE
+from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
 
 app = FastAPI(title="STEP Checker")
 
@@ -101,25 +104,43 @@ class StepComparator:
         edges = shape.edges().vals()
         straight = sum(1 for e in edges if 'LINE' in str(e.geomType()).upper())
         return {'total': len(edges), 'straight': straight, 'curved': len(edges)-straight}
-
+    
     def _detect_fillets(self, shape):
         faces = shape.faces().vals()
         curved = sum(1 for f in faces if any(t in str(f.geomType()).upper() for t in ('CYLINDER','SPHERE','CONE','TORUS')))
         total = len(faces)
         return {'total_faces': total, 'curved_faces': curved, 'ratio': curved/total if total else 0}
-
+    
     def _detect_circles(self, shape):
         circles = []
         faces = shape.faces().vals()
         for f in faces:
             if 'PLANE' in str(f.geomType()).upper():
-                wire = f.outerWire()
-                # Проверяем, является ли wire объектом cq.Wire, если нет - оборачиваем
-                if not hasattr(wire, 'edges'):
-                    wire = cq.Wire(wire)
-                edges = wire.edges().vals()
-                if len(edges) == 1 and 'CIRCLE' in str(edges[0].geomType()).upper():
-                    circles.append(edges[0].radius())
+                try:
+                    # Получаем внешний контур через OCC, минуя проблемы CadQuery
+                    wire_occ = f.wrapped.OuterWire()
+                    if wire_occ.IsNull():
+                        continue
+                    # Подсчитываем количество ребер в wire
+                    from OCC.Core.TopExp import TopExp_Explorer
+                    from OCC.Core.TopAbs import TopAbs_EDGE
+                    explorer = TopExp_Explorer(wire_occ, TopAbs_EDGE)
+                    edge_count = 0
+                    while explorer.More():
+                        edge_count += 1
+                        explorer.Next()
+                    if edge_count == 1:
+                        # Получаем геометрию ребра
+                        from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
+                        explorer = TopExp_Explorer(wire_occ, TopAbs_EDGE)
+                        explorer.More()
+                        edge_occ = explorer.Current()
+                        curve = BRepAdaptor_Curve(edge_occ)
+                        if curve.GetType() == 2:  # GeomAbs_Circle
+                            radius = curve.Circle().Radius()
+                            circles.append(radius)
+                except Exception:
+                    continue
         return circles
 
     def compare(self, stud_path):
