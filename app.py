@@ -35,13 +35,13 @@ except Exception as e:
     print(f"✗ ras: {e}")
     ras_app = None
 
-# STEP CHECKER
 try:
-    from check.main import router as check_router
-    print("✓ step checker imported")
+    from check.main import app as check_app
+    print("✓ check imported")
 except Exception as e:
-    print(f"✗ step checker: {e}")
-    check_router = None
+    print(f"✗ check: {e}")
+    check_app = None
+
 
 app = FastAPI(title="CAD Tools Suite")
 
@@ -61,9 +61,8 @@ if sek_app:
     app.mount("/sek", sek_app)
 if ras_app:
     app.mount("/ras", ras_app)
-if check_router:
-    app.include_router(check_router, prefix="/check", tags=["step_checker"])
-
+if check_app:
+    app.mount("/check", check_app)
 # ------------------ Функции очистки временных папок ------------------
 
 def clean_old_files(directory: Path, age_minutes: int = 10):
