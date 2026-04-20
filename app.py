@@ -42,7 +42,6 @@ except Exception as e:
     print(f"✗ check: {e}")
     check_app = None
 
-
 app = FastAPI(title="CAD Tools Suite")
 
 app.add_middleware(
@@ -61,6 +60,7 @@ if sek_app:
     app.mount("/sek", sek_app)
 if ras_app:
     app.mount("/ras", ras_app)
+    
 if check_app:
     app.mount("/check", check_app)
 # ------------------ Функции очистки временных папок ------------------
