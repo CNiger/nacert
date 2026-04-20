@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STEP Checker | Верификация моделей</title>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Major+Mono+Display&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --metal-base: #171a1f;
+            --metal-panel: #1f232a;
+            --metal-border: #3a3e48;
+            --text-primary: #eef2f8;
+            --text-secondary: #9ca3b5;
+            --orange-pulse: #ff5500;
+            --orange-active: #e6451a;
+            --cyan-system: #00a6c4;
+            --success: #4caf50;
+        }
+        body {
+            background-color: var(--metal-base);
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--text-primary);
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-family: 'Major Mono Display', monospace;
+            font-size: 2rem;
+            border-left: 4px solid var(--orange-pulse);
+            padding-left: 1rem;
+            margin-bottom: 1rem;
+        }
+        .sub {
+            color: var(--text-secondary);
+            margin-bottom: 2rem;
+            font-size: 0.85rem;
+        }
+        .upload-area {
+            background: var(--metal-panel);
+            border: 1px dashed var(--metal-border);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            transition: all 0.2s;
+        }
+        .upload-area.drag-over {
+            border-color: var(--orange-pulse);
+            background: rgba(255,85,0,0.05);
+        }
+        .file-input {
+            display: none;
+        }
+        .file-label {
+            background: var(--cyan-system);
+            color: #000;
+            padding: 0.6rem 1.5rem;
+            border-radius: 4px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-block;
+            margin: 0.5rem;
+        }
+        .file-list {
+            margin-top: 1rem;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        button {
+            background: var(--orange-pulse);
+            border: none;
+            color: white;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            padding: 0.8rem 2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 1rem;
+            transition: 0.1s linear;
+        }
+        button:active { transform: translateY(1px); }
+        .results {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .card {
+            background: var(--metal-panel);
+            border: 1px solid var(--metal-border);
+            border-radius: 6px;
+            padding: 1.2rem;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--metal-border);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .score {
+            font-size: 2.2rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        .metric {
+            font-size: 0.75rem;
+            margin: 0.6rem 0;
+        }
+        .bar {
+            height: 4px;
+            background: #2a2e38;
+            border-radius: 2px;
+            margin-top: 4px;
+        }
+        .bar-fill {
+            height: 100%;
+            background: var(--orange-pulse);
+            width: 0%;
+            border-radius: 2px;
+        }
+        .badge {
+            background: rgba(255,85,0,0.2);
+            padding: 0.2rem 0.6rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+        }
+        .status {
+            background: #0c0f14;
+            padding: 0.8rem;
+            border-left: 3px solid var(--cyan-system);
+            margin-bottom: 1.5rem;
+            font-size: 0.8rem;
+        }
+        .loader {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #fff;
+            border-top-color: var(--orange-pulse);
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        footer {
+            margin-top: 3rem;
+            text-align: center;
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            border-top: 1px solid var(--metal-border);
+            padding-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1><i class="fas fa-cube" style="color:#ff5500;"></i> STEP VALIDATOR</h1>
+    <div class="sub">Сравнение геометрии с эталоном · воксельный IoU + D2/A3 + топология</div>
+
+    <div class="upload-area" id="dropzone">
+        <i class="fas fa-upload" style="font-size: 2rem; color: #00a6c4;"></i>
+        <p>Перетащите файлы или выберите вручную</p>
+        <label class="file-label" for="refInput">📁 Эталон (reference.step)</label>
+        <label class="file-label" for="studInput">📂 Студенческие файлы (step)</label>
+        <input type="file" id="refInput" class="file-input" accept=".step">
+        <input type="file" id="studInput" class="file-input" accept=".step" multiple>
+        <div class="file-list" id="fileList"></div>
+        <button id="compareBtn">🚀 ЗАПУСТИТЬ СРАВНЕНИЕ</button>
+    </div>
+
+    <div id="status" class="status" style="display: none;"></div>
+    <div id="results"></div>
+    <footer>Инженерная геометрия · агрессивный режим штрафов (power=1.6)</footer>
+</div>
+
+<script>
+    const dropzone = document.getElementById('dropzone');
+    const refInput = document.getElementById('refInput');
+    const studInput = document.getElementById('studInput');
+    const fileListDiv = document.getElementById('fileList');
+    const compareBtn = document.getElementById('compareBtn');
+    const statusDiv = document.getElementById('status');
+    const resultsDiv = document.getElementById('results');
+
+    let referenceFile = null;
+    let studentFiles = [];
+
+    function updateFileList() {
+        let html = '';
+        if (referenceFile) html += `<div>✅ Эталон: ${referenceFile.name}</div>`;
+        if (studentFiles.length) html += `<div>📌 Студенты (${studentFiles.length}): ${studentFiles.map(f=>f.name).join(', ')}</div>`;
+        fileListDiv.innerHTML = html || '<div style="color:#9ca3b5;">Файлы не выбраны</div>';
+    }
+
+    refInput.addEventListener('change', (e) => {
+        if (e.target.files.length) referenceFile = e.target.files[0];
+        updateFileList();
+    });
+    studInput.addEventListener('change', (e) => {
+        studentFiles = Array.from(e.target.files);
+        updateFileList();
+    });
+
+    // drag & drop
+    dropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        dropzone.classList.add('drag-over');
+    });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+    dropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropzone.classList.remove('drag-over');
+        const items = e.dataTransfer.items;
+        let ref = null, studs = [];
+        for (let i = 0; i < items.length; i++) {
+            const file = items[i].getAsFile();
+            if (!file) continue;
+            if (file.name.toLowerCase() === 'reference.step') ref = file;
+            else if (file.name.endsWith('.step')) studs.push(file);
+        }
+        if (ref) referenceFile = ref;
+        if (studs.length) studentFiles = studs;
+        updateFileList();
+    });
+
+    compareBtn.onclick = async () => {
+        if (!referenceFile || studentFiles.length === 0) {
+            statusDiv.style.display = 'block';
+            statusDiv.innerHTML = '❌ Выберите эталонный файл и хотя бы один студенческий .step';
+            return;
+        }
+        const formData = new FormData();
+        formData.append('reference', referenceFile);
+        for (let f of studentFiles) formData.append('files', f);
+
+        statusDiv.style.display = 'block';
+        statusDiv.innerHTML = '<span class="loader"></span> Анализ геометрии, вокселизация...';
+        resultsDiv.innerHTML = '';
+
+        try {
+            const resp = await fetch('/check/compare', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+            if (data.success) {
+                statusDiv.innerHTML = `✅ Сравнено ${data.results.length} моделей. Штраф power=1.6`;
+                displayResults(data.results);
+            } else {
+                statusDiv.innerHTML = `❌ Ошибка: ${data.detail || 'неизвестная'}`;
+            }
+        } catch(e) {
+            statusDiv.innerHTML = `❌ Сетевая ошибка: ${e.message}`;
+        }
+    };
+
+    function displayResults(results) {
+        let html = '<div class="results">';
+        for (let r of results) {
+            const scoreClass = r.score >= 80 ? '#4caf50' : (r.score >= 50 ? '#ffb347' : '#ff5e5e');
+            html += `
+                <div class="card">
+                    <div class="card-header">
+                        <span><i class="fas fa-file-alt"></i> ${r.file}</span>
+                        <span class="badge">${r.score >= 80 ? 'ПРИНЯТ' : (r.score >= 50 ? 'ДОРАБОТАТЬ' : 'ОТКЛОНЁН')}</span>
+                    </div>
+                    <div class="score" style="color:${scoreClass}">${r.score} <span style="font-size:0.8rem;">/100</span></div>
+                    <div class="metric">🧊 Воксельный IoU: ${r.voxel_iou}%<div class="bar"><div class="bar-fill" style="width:${r.voxel_iou}%"></div></div></div>
+                    <div class="metric">📐 D2+A3 форма: ${r.d2a3}%<div class="bar"><div class="bar-fill" style="width:${r.d2a3}%"></div></div></div>
+                    <div class="metric">🔗 Рёбра: ${r.edges}%<div class="bar"><div class="bar-fill" style="width:${r.edges}%"></div></div></div>
+                    <div class="metric">✨ Скругления: ${r.fillets}%<div class="bar"><div class="bar-fill" style="width:${r.fillets}%"></div></div></div>
+                    <div class="metric">⚪ Круглые основания: ${r.circles}%<div class="bar"><div class="bar-fill" style="width:${r.circles}%"></div></div></div>
+                    <div class="metric" style="font-size:0.7rem; color:#9ca3b5;">${r.details.ref_edges} рёбер в эталоне, ${r.details.stud_edges} у студента | ${r.details.ref_circles} / ${r.details.stud_circles} оснований</div>
+                </div>
+            `;
+        }
+        html += '</div>';
+        resultsDiv.innerHTML = html;
+    }
+</script>
+</body>
+</html>
