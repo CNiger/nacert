@@ -1,11 +1,10 @@
 import os
 import shutil
-import tempfile
 import hashlib
 import time
 from pathlib import Path
 from typing import List
-from fastapi import APIRouter, File, UploadFile, HTTPException
+from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import numpy as np
@@ -13,7 +12,7 @@ import cadquery as cq
 import trimesh
 from scipy.stats import wasserstein_distance
 
-router = APIRouter()
+app = FastAPI(title="STEP Checker")
 
 # свой temp как у всех сервисов
 TEMP_DIR = Path(__file__).parent / "temp"
@@ -183,11 +182,12 @@ class StepComparator:
             }
         }
 
-@router.post("/compare")
+@app.post("/compare")
 async def compare_steps(
     reference: UploadFile = File(...),
     files: List[UploadFile] = File(...)
 ):
+    import tempfile
     if not reference.filename.lower().endswith('.step'):
         raise HTTPException(400, "reference must be .step")
     
@@ -214,9 +214,10 @@ async def compare_steps(
     finally:
         shutil.rmtree(session_dir, ignore_errors=True)
 
-
-
-@router.get("/")
+@app.get("/")
 async def index():
     html_path = Path(__file__).parent / "static" / "index.html"
     return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
+
+# Монтируем статику как у всех сервисов
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
