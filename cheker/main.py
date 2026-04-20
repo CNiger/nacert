@@ -2,9 +2,9 @@ import os
 import shutil
 import tempfile
 import hashlib
-import pickle
+import time
 from pathlib import Path
-from typing import List, Dict
+from typing import List
 from fastapi import APIRouter, File, UploadFile, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -15,58 +15,33 @@ from scipy.stats import wasserstein_distance
 
 router = APIRouter()
 
-CACHE_DIR = Path(__file__).parent / "cache"
-CACHE_DIR.mkdir(exist_ok=True)
+# свой temp как у всех сервисов
+TEMP_DIR = Path(__file__).parent / "temp"
+TEMP_DIR.mkdir(exist_ok=True)
 
-PENALTY_POWER = 1.6  # жёсткость штрафа
+PENALTY_POWER = 1.6
 
 def aggressive_penalty(sim: float) -> float:
     return sim ** PENALTY_POWER
 
 class StepComparator:
     def __init__(self, ref_path: str):
-        self.ref_path = ref_path
-        cache_key = hashlib.md5(open(ref_path, 'rb').read()).hexdigest()
-        cache_file = CACHE_DIR / f"ref_{cache_key}.pkl"
-        if cache_file.exists():
-            with open(cache_file, 'rb') as f:
-                data = pickle.load(f)
-                self.ref_mesh = data['mesh']
-                self.ref_voxels = data['voxels']
-                self.ref_d2 = data['d2']
-                self.ref_a3 = data['a3']
-                self.ref_edges = data['edges']
-                self.ref_fillets = data['fillets']
-                self.ref_circles = data['circles']
-                self.ref_volume = data['volume']
-        else:
-            self.ref_cq = cq.importers.importStep(ref_path)
-            self.ref_mesh = self._to_mesh(self.ref_cq)
-            self.ref_mesh = self._normalize(self.ref_mesh)
-            self.ref_mesh = self._align_pca(self.ref_mesh)
-            self.ref_voxels = {
-                32: self._to_voxels(self.ref_mesh, 32),
-                64: self._to_voxels(self.ref_mesh, 64)
-            }
-            self.ref_d2, self.ref_a3 = self._d2_a3(self.ref_mesh)
-            self.ref_edges = self._count_edges(self.ref_cq)
-            self.ref_fillets = self._detect_fillets(self.ref_cq)
-            self.ref_circles = self._detect_circles(self.ref_cq)
-            self.ref_volume = self.ref_mesh.volume
-            with open(cache_file, 'wb') as f:
-                pickle.dump({
-                    'mesh': self.ref_mesh,
-                    'voxels': self.ref_voxels,
-                    'd2': self.ref_d2,
-                    'a3': self.ref_a3,
-                    'edges': self.ref_edges,
-                    'fillets': self.ref_fillets,
-                    'circles': self.ref_circles,
-                    'volume': self.ref_volume
-                }, f)
+        self.ref_cq = cq.importers.importStep(ref_path)
+        self.ref_mesh = self._to_mesh(self.ref_cq)
+        self.ref_mesh = self._normalize(self.ref_mesh)
+        self.ref_mesh = self._align_pca(self.ref_mesh)
+        self.ref_voxels = {
+            32: self._to_voxels(self.ref_mesh, 32),
+            64: self._to_voxels(self.ref_mesh, 64)
+        }
+        self.ref_d2, self.ref_a3 = self._d2_a3(self.ref_mesh)
+        self.ref_edges = self._count_edges(self.ref_cq)
+        self.ref_fillets = self._detect_fillets(self.ref_cq)
+        self.ref_circles = self._detect_circles(self.ref_cq)
+        self.ref_volume = self.ref_mesh.volume
 
     def _to_mesh(self, shape):
-        fd, stl = tempfile.mkstemp(suffix='.stl')
+        fd, stl = tempfile.mkstemp(suffix='.stl', dir=TEMP_DIR)
         os.close(fd)
         cq.exporters.export(shape, stl, 'STL')
         mesh = trimesh.load_mesh(stl)
@@ -104,12 +79,10 @@ class StepComparator:
         pts, _ = trimesh.sample.sample_surface(mesh, n)
         if len(pts) < 3:
             return np.zeros(50), np.zeros(50)
-        # D2
         idx = np.random.choice(len(pts), size=(n//2,2))
         d = np.linalg.norm(pts[idx[:,0]] - pts[idx[:,1]], axis=1)
         d /= max(d.max(), 1e-8)
         d2, _ = np.histogram(d, bins=50, range=(0,1), density=True)
-        # A3
         tri = np.random.choice(len(pts), size=(n//4,3))
         angles = []
         for i,j,k in tri:
@@ -152,7 +125,6 @@ class StepComparator:
         mesh = self._normalize(mesh)
         mesh = self._align_pca(mesh)
 
-        # voxel
         ious = []
         for res in (32,64):
             sv = self._to_voxels(mesh, res)
@@ -162,23 +134,19 @@ class StepComparator:
             ious.append(inter/union if union else 1.0)
         vox_iou = np.mean(ious)
 
-        # D2+A3
         d2, a3 = self._d2_a3(mesh)
         d2_sim = 1 - min(1.0, wasserstein_distance(np.arange(50), np.arange(50), self.ref_d2, d2)/50)
         a3_sim = 1 - min(1.0, wasserstein_distance(np.arange(50), np.arange(50), self.ref_a3, a3)/np.pi)
         d2a3 = 0.5*d2_sim + 0.5*a3_sim
 
-        # edges
         e = self._count_edges(stud_cq)
         ed_sim = 1 - (abs(self.ref_edges['total']-e['total'])/max(self.ref_edges['total'],1)*0.6 +
                       abs(self.ref_edges['straight']/max(self.ref_edges['total'],1) - e['straight']/max(e['total'],1))*0.4)
         ed_sim = max(0, min(1, ed_sim))
 
-        # fillets
         f = self._detect_fillets(stud_cq)
         fil_sim = 1 - min(1.0, abs(self.ref_fillets['ratio'] - f['ratio']))
 
-        # circles
         c = self._detect_circles(stud_cq)
         count_diff = abs(len(self.ref_circles)-len(c))/max(len(self.ref_circles),1)
         if self.ref_circles and c:
@@ -190,14 +158,12 @@ class StepComparator:
             rad_sim = 0.0
         circ_sim = 1 - (count_diff*0.5 + (1-rad_sim)*0.5)
 
-        # apply penalty
         vox = aggressive_penalty(vox_iou)
         d2a3 = aggressive_penalty(d2a3)
         ed = aggressive_penalty(ed_sim)
         fil = aggressive_penalty(fil_sim)
         circ = aggressive_penalty(circ_sim)
 
-        # weights
         w_v, w_d, w_e, w_f, w_c = 0.45, 0.25, 0.10, 0.10, 0.10
         total = (vox*w_v + d2a3*w_d + ed*w_e + fil*w_f + circ*w_c) * 100
 
@@ -222,28 +188,32 @@ async def compare_steps(
     reference: UploadFile = File(...),
     files: List[UploadFile] = File(...)
 ):
-    # проверка расширений
     if not reference.filename.lower().endswith('.step'):
         raise HTTPException(400, "reference must be .step")
-    temp_dir = Path(tempfile.mkdtemp())
+    
+    session_dir = TEMP_DIR / f"session_{int(time.time())}_{hashlib.md5(reference.filename.encode()).hexdigest()[:8]}"
+    session_dir.mkdir(exist_ok=True)
+    
     try:
-        ref_path = temp_dir / "reference.step"
+        ref_path = session_dir / "reference.step"
         with open(ref_path, "wb") as f:
             shutil.copyfileobj(reference.file, f)
+        
         comparator = StepComparator(str(ref_path))
         results = []
+        
         for f in files:
             if not f.filename.lower().endswith('.step'):
                 continue
-            stud_path = temp_dir / f.filename
+            stud_path = session_dir / f.filename
             with open(stud_path, "wb") as sf:
                 shutil.copyfileobj(f.file, sf)
             results.append(comparator.compare(str(stud_path)))
+        
         return {"success": True, "results": results}
     finally:
-        shutil.rmtree(temp_dir, ignore_errors=True)
+        shutil.rmtree(session_dir, ignore_errors=True)
 
-# статика
 router.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="check_static")
 
 @router.get("/")
