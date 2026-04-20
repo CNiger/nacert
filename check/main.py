@@ -214,7 +214,7 @@ async def compare_steps(
     finally:
         shutil.rmtree(session_dir, ignore_errors=True)
 
-router.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="check_static")
+
 
 @router.get("/")
 async def index():
