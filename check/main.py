@@ -188,14 +188,14 @@ async def compare_steps(
     reference: UploadFile = File(...),
     files: List[UploadFile] = File(...)
 ):
-    import tempfile
-    if not reference.filename.lower().endswith('.step'):
-        raise HTTPException(400, "reference must be .step")
-    
-    session_dir = TEMP_DIR / f"session_{int(time.time())}_{hashlib.md5(reference.filename.encode()).hexdigest()[:8]}"
-    session_dir.mkdir(exist_ok=True)
-    
+    import traceback
     try:
+        if not reference.filename.lower().endswith('.step'):
+            raise HTTPException(400, "reference must be .step")
+        
+        session_dir = TEMP_DIR / f"session_{int(time.time())}_{hashlib.md5(reference.filename.encode()).hexdigest()[:8]}"
+        session_dir.mkdir(exist_ok=True)
+        
         ref_path = session_dir / "reference.step"
         with open(ref_path, "wb") as f:
             shutil.copyfileobj(reference.file, f)
@@ -211,9 +211,19 @@ async def compare_steps(
                 shutil.copyfileobj(f.file, sf)
             results.append(comparator.compare(str(stud_path)))
         
-        return {"success": True, "results": results}
-    finally:
+        # Удаляем временную папку после успешной обработки
         shutil.rmtree(session_dir, ignore_errors=True)
+        
+        return {"success": True, "results": results}
+    
+    except Exception as e:
+        # Возвращаем ошибку в JSON, а не HTML
+        error_msg = f"{type(e).__name__}: {str(e)}\n{traceback.format_exc()}"
+        print(error_msg)  # В лог контейнера
+        return JSONResponse(
+            status_code=500,
+            content={"success": False, "detail": error_msg}
+        )
 
 @app.get("/")
 async def index():
