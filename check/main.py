@@ -114,6 +114,9 @@ class StepComparator:
         for f in faces:
             if 'PLANE' in str(f.geomType()).upper():
                 wire = f.outerWire()
+                # Проверяем, является ли wire объектом cq.Wire, если нет - оборачиваем
+                if not hasattr(wire, 'edges'):
+                    wire = cq.Wire(wire)
                 edges = wire.edges().vals()
                 if len(edges) == 1 and 'CIRCLE' in str(edges[0].geomType()).upper():
                     circles.append(edges[0].radius())
