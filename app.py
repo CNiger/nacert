@@ -11,31 +11,40 @@ try:
     from rot_cut.main import app as rot_cut_app
     print("✓ rot_cut imported")
 except Exception as e:
-    print(f"✗ rot_cut import error: {e}")
+    print(f"✗ rot_cut: {e}")
     rot_cut_app = None
 
 try:
     from pol_cut.main import app as pol_cut_app
     print("✓ pol_cut imported")
 except Exception as e:
-    print(f"✗ pol_cut import error: {e}")
+    print(f"✗ pol_cut: {e}")
     pol_cut_app = None
 
 try:
     from sek.main import app as sek_app
     print("✓ sek imported")
 except Exception as e:
-    print(f"✗ sek import error: {e}")
+    print(f"✗ sek: {e}")
     sek_app = None
 
 try:
     from ras.main import app as ras_app
     print("✓ ras imported")
 except Exception as e:
-    print(f"✗ ras import error: {e}")
+    print(f"✗ ras: {e}")
     ras_app = None
 
+# STEP CHECKER
+try:
+    from check.main import router as check_router
+    print("✓ step checker imported")
+except Exception as e:
+    print(f"✗ step checker: {e}")
+    check_router = None
+
 app = FastAPI(title="CAD Tools Suite")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -52,6 +61,8 @@ if sek_app:
     app.mount("/sek", sek_app)
 if ras_app:
     app.mount("/ras", ras_app)
+if check_router:
+    app.include_router(check_router, prefix="/check", tags=["step_checker"])
 
 # ------------------ Функции очистки временных папок ------------------
 
@@ -75,7 +86,6 @@ def clean_old_files(directory: Path, age_minutes: int = 10):
                     print(f"Удалён старый файл: {file_path}")
             except Exception as e:
                 print(f"Ошибка при удалении {file_path}: {e}")
-        # Удаляем пустые папки
         for dir_name in dirs:
             dir_path = root_path / dir_name
             try:
@@ -91,29 +101,25 @@ async def periodic_cleanup(interval_minutes: int = 5):
     """
     while True:
         try:
-            # Список папок для очистки (относительно текущего расположения app.py)
             base_dir = Path(__file__).parent
             temp_dirs = [
                 base_dir / "rot_cut" / "temp",
                 base_dir / "pol_cut" / "temp",
                 base_dir / "sek" / "temp",
                 base_dir / "ras" / "temp",
+                base_dir / "check" / "temp",
             ]
             for temp_dir in temp_dirs:
                 clean_old_files(temp_dir, age_minutes=10)
         except Exception as e:
             print(f"Ошибка в periodic_cleanup: {e}")
-        # Ждём заданный интервал
         await asyncio.sleep(interval_minutes * 60)
-
-# ------------------ Запуск и остановка фоновой задачи ------------------
 
 cleanup_task = None
 
 @app.on_event("startup")
 async def startup_event():
     global cleanup_task
-    # Запускаем фоновую очистку раз в 5 минут
     cleanup_task = asyncio.create_task(periodic_cleanup(interval_minutes=5))
     print("Фоновая очистка временных папок запущена (интервал 5 минут)")
 
@@ -125,10 +131,6 @@ async def shutdown_event():
         print("Фоновая очистка остановлена")
 
 # ------------------ Статические страницы ------------------
-from fastapi.staticfiles import StaticFiles
-
-# Монтируем папку с лекциями (включая картинки)
-app.mount("/lek", StaticFiles(directory="lek", html=True), name="lek")
 
 @app.get("/lekz.html")
 def lekz():
