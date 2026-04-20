@@ -13,8 +13,8 @@ import cadquery as cq
 import trimesh
 from scipy.stats import wasserstein_distance
 
-# Создаём отдельное приложение, а не роутер
-check_app = FastAPI()
+# Создаём приложение как у всех сервисов
+app = FastAPI()
 
 TEMP_DIR = Path(__file__).parent / "temp"
 TEMP_DIR.mkdir(exist_ok=True)
@@ -183,7 +183,7 @@ class StepComparator:
             }
         }
 
-@check_app.post("/compare")
+@ app.post("/compare")
 async def compare_steps(
     reference: UploadFile = File(...),
     files: List[UploadFile] = File(...)
@@ -214,10 +214,10 @@ async def compare_steps(
     finally:
         shutil.rmtree(session_dir, ignore_errors=True)
 
-# Статика
-check_app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="check_static")
+# Статика как у всех
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
 
-@check_app.get("/")
+@ app.get("/")
 async def index():
     html_path = Path(__file__).parent / "static" / "index.html"
     return HTMLResponse(content=html_path.read_text(encoding="utf-8"))
