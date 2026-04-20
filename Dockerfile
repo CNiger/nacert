@@ -11,21 +11,25 @@ RUN conda create -n cadenv -c conda-forge \
     fastapi \
     uvicorn \
     ezdxf \
+    scipy \
+    numpy \
     -y
+
+RUN conda run -n cadenv pip install trimesh
 
 SHELL ["conda", "run", "-n", "cadenv", "/bin/bash", "-c"]
 
 WORKDIR /app
 
-# Копируем всё
 COPY . .
 
-# Создаём нужные папки (на случай, если их нет в репозитории)
+# как у всех сервисов - каждый со своим temp
 RUN mkdir -p rot_cut/temp rot_cut/static rot_cut/primitives \
              pol_cut/temp pol_cut/static \
              sek/temp sek/static sek/primitives \
              ras/temp ras/static \
-             temp static
+             check/temp check/static \
+             temp
 
 EXPOSE 8000
 
