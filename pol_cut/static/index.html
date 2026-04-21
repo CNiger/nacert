@@ -8,34 +8,61 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #1a1e2a; font-family: monospace; color: #eef2f8; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
         .container { max-width: 1400px; width: 100%; background: #0f1117; border: 1px solid #ff5500; border-radius: 8px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .title { font-size: 1.5rem; margin-bottom: 20px; border-left: 4px solid #ff5500; padding-left: 16px; }
+        .title { font-size: 1.5rem; margin-bottom: 20px; border-left: 4px solid #ff5500; padding-left: 16px; color: #ffffff; }
         .flex-row { display: flex; gap: 24px; flex-wrap: wrap; }
         .canvas-panel { flex: 2; min-width: 300px; }
         .controls-panel { flex: 1; min-width: 280px; }
         .canvas-container { background: #1e2129; border: 1px solid #3a3e48; border-radius: 4px; margin-bottom: 20px; position: relative; }
         canvas { width: 100%; display: block; background: #1e2129; cursor: crosshair; }
-        .status { background: #0a0c10; padding: 10px; font-family: monospace; font-size: 0.8rem; margin-top: 12px; border-left: 3px solid #ff5500; }
+        .status { background: #0a0c10; padding: 10px; font-family: monospace; font-size: 0.8rem; margin-top: 12px; border-left: 3px solid #ff5500; color: #d4d8e8; }
         .shape-selector { display: flex; gap: 12px; margin-bottom: 20px; }
-        .shape-btn { flex: 1; background: #0f1117; border: 1px solid #3a3e48; padding: 12px; text-align: center; cursor: pointer; font-weight: bold; }
-        .shape-btn.active { border-bottom: 2px solid #ff5500; color: #ff5500; }
-        .btn { background: #0f1117; border: 1px solid #3a3e48; padding: 10px 16px; cursor: pointer; font-weight: bold; margin-top: 12px; width: 100%; }
+        .shape-btn { flex: 1; background: #0f1117; border: 1px solid #3a3e48; padding: 12px; text-align: center; cursor: pointer; font-weight: bold; color: #b8c0d0; transition: all 0.2s; }
+        .shape-btn:hover { color: #ffaa66; border-color: #ffaa66; }
+        .shape-btn.active { border-bottom: 2px solid #ff5500; color: #ffaa66; }
+        .btn { background: #0f1117; border: 1px solid #3a3e48; padding: 10px 16px; cursor: pointer; font-weight: bold; margin-top: 12px; width: 100%; color: #d4d8e8; transition: all 0.2s; }
+        .btn:hover { color: #ffffff; border-color: #ffaa66; }
         .btn-primary { border-left: 2px solid #ff5500; }
-        .btn-primary:hover { border-color: #ff5500; transform: translateY(-1px); }
+        .btn-primary:hover { border-color: #ff5500; transform: translateY(-1px); color: #ffaa66; }
         .btn:active { transform: translateY(1px); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .info { margin-top: 20px; font-size: 0.8rem; background: #0f1117; padding: 12px; border-radius: 4px; }
-        .points-list { max-height: 150px; overflow-y: auto; background: #0a0c10; padding: 8px; font-size: 0.7rem; margin-top: 12px; }
-        .point-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #2a2c34; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; color: #6a6e7c; }
+        .info { margin-top: 20px; font-size: 0.8rem; background: #0f1117; padding: 12px; border-radius: 4px; color: #c0c8dc; border-left: 2px solid #ff5500; }
+        .info strong { color: #ffaa66; }
+        .points-list { max-height: 150px; overflow-y: auto; background: #0a0c10; padding: 8px; font-size: 0.7rem; margin-top: 12px; color: #c8d0e4; }
+        .point-item { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid #2a2c34; color: #d0d6ea; }
+        .point-item span:first-child { color: #ffaa66; font-weight: bold; }
         .download-group { display: flex; gap: 12px; margin-top: 12px; }
-        .download-btn { flex: 1; background: #0f1117; border: 1px solid #3a3e48; padding: 10px; cursor: pointer; text-align: center; font-size: 0.8rem; }
+        .download-btn { flex: 1; background: #0f1117; border: 1px solid #3a3e48; padding: 10px; cursor: pointer; text-align: center; font-size: 0.8rem; color: #d4d8e8; transition: all 0.2s; }
+        .download-btn:hover { color: #ffaa66; border-color: #ffaa66; }
         .loading { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .loader { background: #1f232a; padding: 30px; border: 1px solid #ff5500; border-radius: 8px; text-align: center; }
+        .loader { background: #1f232a; padding: 30px; border: 1px solid #ff5500; border-radius: 8px; text-align: center; color: #eef2f8; }
         .spinner { width: 40px; height: 40px; border: 3px solid #3a3e48; border-top-color: #ff5500; border-radius: 50%; animation: spin 0.6s linear infinite; margin: 0 auto 16px; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .side-selector { display: flex; gap: 12px; margin: 15px 0; justify-content: center; }
-        .side-btn { background: #0f1117; border: 1px solid #3a3e48; padding: 10px 20px; cursor: pointer; text-align: center; font-size: 0.9rem; }
-        .side-btn.active { border-color: #ff5500; color: #ff5500; background: #1a1e28; }
-        .debug-info { position: absolute; bottom: 5px; left: 10px; font-size: 11px; color: #aaa; background: rgba(0,0,0,0.5); padding: 2px 6px; border-radius: 4px; pointer-events: none; }
+        .side-btn { background: #0f1117; border: 1px solid #3a3e48; padding: 10px 20px; cursor: pointer; text-align: center; font-size: 0.9rem; color: #b8c0d0; transition: all 0.2s; }
+        .side-btn:hover { color: #ffaa66; border-color: #ffaa66; }
+        .side-btn.active { border-color: #ff5500; color: #ffaa66; background: #1a1e28; }
+        .debug-info { position: absolute; bottom: 5px; left: 10px; font-size: 11px; color: #ffaa66; background: rgba(0,0,0,0.7); padding: 2px 6px; border-radius: 4px; pointer-events: none; font-weight: bold; }
+        /* новый стиль для кнопки прямой фигуры */
+        .straight-btn-group {
+            margin: 12px 0 8px 0;
+        }
+        .btn-straight {
+            background: #0f1117;
+            border: 1px solid #2c6e2c;
+            color: #a0ffa0;
+            transition: all 0.2s;
+        }
+        .btn-straight:hover {
+            border-color: #55ff55;
+            background: #1a2a1a;
+            color: #ccffcc;
+        }
+        .straight-info {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 5px;
+            color: #a0d0a0;
+        }
     </style>
 </head>
 <body>
@@ -57,6 +84,13 @@
                 </div>
                 <button id="startBaseBtn" class="btn btn-primary">✏️ Рисовать основание</button>
                 <button id="clearBaseBtn" class="btn">🗑️ Очистить основание</button>
+                
+                <!-- Новая кнопка для автоматического центра вершины -->
+                <div class="straight-btn-group">
+                    <button id="autoCenterApexBtn" class="btn btn-straight" style="margin-top:0;">🎯 Прямая фигура (центр основания)</button>
+                    <div class="straight-info">Вершина/центр автоматически в геометрическом центре</div>
+                </div>
+                
                 <button id="setApexBtn" class="btn btn-primary" disabled>📍 Установить точку (вершина/центр)</button>
                 <button id="generateBtn" class="btn btn-primary" disabled>⚡ Сгенерировать 3D модель</button>
                 <div class="info">
@@ -64,10 +98,11 @@
                     1. Выберите тип (пирамида / призма).<br>
                     2. Нажмите "Рисовать основание" и кликайте по холсту (минимум 3 точки).<br>
                     3. Нажмите "Установить точку" и кликните один раз – это вершина/центр.<br>
+                    <span style="color:#ffaa66;">▶ НОВОЕ: кнопка "Прямая фигура" — вершина ставится ровно в центр основания (без наклона).</span><br>
                     4. Нажмите "Сгенерировать модель".
                 </div>
-                <div class="points-list" id="basePointsList"><div style="text-align:center; color:#9ca3b5;">Основание: нет точек</div></div>
-                <div class="points-list" id="apexPointDisplay"><div style="text-align:center; color:#9ca3b5;">Точка: не установлена</div></div>
+                <div class="points-list" id="basePointsList"><div style="text-align:center; color:#a0a8c0;">Основание: нет точек</div></div>
+                <div class="points-list" id="apexPointDisplay"><div style="text-align:center; color:#a0a8c0;">Точка: не установлена</div></div>
             </div>
             <div id="stage2Panel" style="display:none;">
                 <div class="info"><strong>Этап 2: Вырез</strong><br>Выберите сторону для выреза.</div>
@@ -82,7 +117,7 @@
                 <button id="exportDrawingBtn" class="btn btn-primary" style="margin-top: 12px;">
                     🖼️ Экспорт чертежа (3 проекции SVG)
                 </button>
-                <div class="points-list" id="cutPointsList"><div style="text-align:center; color:#9ca3b5;">Контур выреза: нет точек</div></div>
+                <div class="points-list" id="cutPointsList"><div style="text-align:center; color:#a0a8c0;">Контур выреза: нет точек</div></div>
             </div>
             <div class="download-group" id="downloadGroup" style="display:none;">
                 <button id="downloadStep" class="download-btn">📥 STEP</button>
@@ -132,6 +167,20 @@
     const cutPointsDiv = document.getElementById('cutPointsList');
     const debugInfo = document.getElementById('debugInfo');
     const exportDrawingBtn = document.getElementById('exportDrawingBtn');
+    
+    // ---- новая кнопка авто-центра ----
+    const autoCenterApexBtn = document.getElementById('autoCenterApexBtn');
+    
+    // вспомогательная функция: вычисление геометрического центра многоугольника (x,z)
+    function computePolygonCenter(points) {
+        if (!points || points.length === 0) return null;
+        let sumX = 0, sumZ = 0;
+        for (let p of points) {
+            sumX += p[0];
+            sumZ += p[1];
+        }
+        return [sumX / points.length, sumZ / points.length];
+    }
     
     function drawGrid() {
         ctx.save();
@@ -247,7 +296,7 @@
             basePoints.forEach((p, i) => {
                 ctx.fillStyle = '#ff5500';
                 ctx.beginPath(); ctx.arc(p[0] * width, p[1] * height, 5, 0, 2*Math.PI); ctx.fill();
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 12px monospace';
+                ctx.fillStyle = '#ffffff'; ctx.font = 'bold 12px monospace';
                 ctx.fillText(i+1, p[0]*width - 6, p[1]*height - 6);
             });
         }
@@ -255,7 +304,7 @@
         if (stage1Panel.style.display !== 'none' && apexPoint) {
             ctx.fillStyle = '#00a6c4';
             ctx.beginPath(); ctx.arc(apexPoint[0] * width, apexPoint[1] * height, 7, 0, 2*Math.PI); ctx.fill();
-            ctx.fillStyle = '#fff'; ctx.font = 'bold 14px monospace';
+            ctx.fillStyle = '#ffffff'; ctx.font = 'bold 14px monospace';
             ctx.fillText('★', apexPoint[0]*width - 4, apexPoint[1]*height + 5);
         }
         
@@ -273,7 +322,7 @@
             cutPoints.forEach((p, i) => {
                 ctx.fillStyle = '#ff0000';
                 ctx.beginPath(); ctx.arc(p[0] * width, p[1] * height, 4, 0, 2*Math.PI); ctx.fill();
-                ctx.fillStyle = '#fff'; ctx.font = 'bold 10px monospace';
+                ctx.fillStyle = '#ffffff'; ctx.font = 'bold 10px monospace';
                 ctx.fillText(i+1, p[0]*width - 4, p[1]*height - 4);
             });
         }
@@ -284,18 +333,18 @@
         setApexBtn.disabled = (mode === 'apex') || (basePoints.length < 3);
         generateBtn.disabled = (basePoints.length < 3) || (apexPoint === null);
         
-        if (basePoints.length === 0) basePointsDiv.innerHTML = '<div style="text-align:center; color:#9ca3b5;">Основание: нет точек</div>';
+        if (basePoints.length === 0) basePointsDiv.innerHTML = '<div style="text-align:center; color:#a0a8c0;">Основание: нет точек</div>';
         else {
-            let html = '<div><strong>Основание (x,z):</strong></div>';
+            let html = '<div><strong style="color:#ffaa66;">Основание (x,z):</strong></div>';
             basePoints.forEach((p, idx) => { html += `<div class="point-item"><span>${idx+1}</span><span>X:${p[0].toFixed(3)} Z:${p[1].toFixed(3)}</span></div>`; });
             basePointsDiv.innerHTML = html;
         }
-        if (apexPoint) apexPointDiv.innerHTML = `<div><strong>Точка (x,z):</strong> ${apexPoint[0].toFixed(3)}, ${apexPoint[1].toFixed(3)}</div>`;
-        else apexPointDiv.innerHTML = '<div style="text-align:center; color:#9ca3b5;">Точка: не установлена</div>';
+        if (apexPoint) apexPointDiv.innerHTML = `<div><strong style="color:#ffaa66;">Точка (x,z):</strong> <span style="color:#d4d8e8;">${apexPoint[0].toFixed(3)}, ${apexPoint[1].toFixed(3)}</span></div>`;
+        else apexPointDiv.innerHTML = '<div style="text-align:center; color:#a0a8c0;">Точка: не установлена</div>';
         
-        if (cutPoints.length === 0) cutPointsDiv.innerHTML = '<div style="text-align:center; color:#9ca3b5;">Контур выреза: нет точек</div>';
+        if (cutPoints.length === 0) cutPointsDiv.innerHTML = '<div style="text-align:center; color:#a0a8c0;">Контур выреза: нет точек</div>';
         else {
-            let html = '<div><strong>Контур выреза:</strong></div>';
+            let html = '<div><strong style="color:#ffaa66;">Контур выреза:</strong></div>';
             cutPoints.forEach((p, idx) => { html += `<div class="point-item"><span>${idx+1}</span><span>U:${p[0].toFixed(3)} V:${p[1].toFixed(3)}</span></div>`; });
             cutPointsDiv.innerHTML = html;
         }
@@ -356,6 +405,28 @@
     setApexBtn.addEventListener('click', () => {
         if (basePoints.length < 3) { statusDiv.innerText = `⚠️ Сначала нарисуйте основание (минимум 3 точки).`; return; }
         mode = 'apex'; statusDiv.innerText = `📍 Режим установки точки. Кликните на холсте.`; updateUI();
+    });
+    
+    // ----- НОВАЯ ФУНКЦИОНАЛЬНОСТЬ: автоматическая вершина в центре основания -----
+    autoCenterApexBtn.addEventListener('click', () => {
+        if (basePoints.length < 3) {
+            statusDiv.innerText = `⚠️ Невозможно поставить вершину в центр: сначала нарисуйте основание (минимум 3 точки).`;
+            return;
+        }
+        const center = computePolygonCenter(basePoints);
+        if (!center) {
+            statusDiv.innerText = `❌ Ошибка вычисления центра основания.`;
+            return;
+        }
+        // Устанавливаем вершину ровно в геометрический центр (x,z) в нормализованных координатах
+        apexPoint = [center[0], center[1]];
+        // Выходим из любого активного режима, чтобы избежать конфликтов
+        if (mode === 'apex') mode = 'idle';
+        // Блокируем ручную установку точки (кнопка setApexBtn станет неактивной, но не трогаем её логику)
+        setApexBtn.disabled = true;   // вершина уже задана, ручной режим не нужен
+        updateUI();
+        draw();
+        statusDiv.innerText = `🎯 Прямая фигура: вершина автоматически установлена в центре основания (${center[0].toFixed(3)}, ${center[1].toFixed(3)}). Теперь можно генерировать модель.`;
     });
     
     async function generateModel() {
