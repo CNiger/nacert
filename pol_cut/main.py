@@ -242,9 +242,9 @@ def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
         "marginTop": 25,
         "showAxes": False,
         "showHidden": True,
-        "strokeWidth": 0.6,                     # уменьшено на 25%
-        "strokeColor": (255, 140, 0),           # оранжевый – видимые линии
-        "hiddenColor": (173, 216, 230),         # голубой – скрытые линии
+        "strokeWidth": 0.6,
+        "strokeColor": (255, 140, 0),
+        "hiddenColor": (173, 216, 230),
     }
 
     tmp_front = TEMP_DIR / "_tmp_front.svg"
@@ -268,9 +268,15 @@ def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
 
         svg_front = clean_svg(tmp_front)
         svg_top   = clean_svg(tmp_top)
-        svg_left  = clean_svg(tmp_left)
+        svg_left_raw = clean_svg(tmp_left)
 
-        # Фон на всю страницу 1200×720
+        # Исправляем ориентацию левой проекции
+        # CadQuery выдаёт вид слева в координатах YZ, где Y идёт вправо, Z вверх
+        # На чертеже нам нужно, чтобы Z (высота) шла вверх, а Y (глубина) шла вправо
+        # Поэтому поворачиваем на 90° против часовой стрелки
+        svg_left = f'<g transform="rotate(-90)">{svg_left_raw}</g>'
+
+        # Фон на всю страницу 2000×1400
         combined_svg = f'''<?xml version="1.0" encoding="UTF-8"?>
 <svg width="2000" height="1400" xmlns="http://www.w3.org/2000/svg">
   <!-- Графитовый фон на всю страницу -->
@@ -289,7 +295,6 @@ def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
         for p in (tmp_front, tmp_top, tmp_left):
             if p.exists():
                 p.unlink()
-                
 # -----------------------------------------------------------------------------
 # FastAPI (остальное без изменений)
 # -----------------------------------------------------------------------------
