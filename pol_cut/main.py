@@ -242,9 +242,9 @@ def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
         "marginTop": 25,
         "showAxes": False,
         "showHidden": True,
-        "strokeWidth": 0.6,                     # уменьшено на 25%
-        "strokeColor": (255, 140, 0),           # оранжевый – видимые линии
-        "hiddenColor": (173, 216, 230),         # голубой – скрытые линии
+        "strokeWidth": 0.6,
+        "strokeColor": (255, 140, 0),
+        "hiddenColor": (173, 216, 230),
     }
 
     tmp_front = TEMP_DIR / "_tmp_front.svg"
@@ -270,6 +270,11 @@ def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
         svg_top   = clean_svg(tmp_top)
         svg_left  = clean_svg(tmp_left)
 
+        # КОСТЫЛЬ: переворачиваем левую проекцию по вертикали (отражаем по оси Y)
+        # Добавляем transform="scale(1, -1)" для переворота, но нужно также сместить,
+        # чтобы не вылезла за пределы области
+        svg_left = _flip_svg_vertical(svg_left, opts["height"])
+
         # Фон на всю страницу 1200×720
         combined_svg = f'''<?xml version="1.0" encoding="UTF-8"?>
 <svg width="2000" height="1400" xmlns="http://www.w3.org/2000/svg">
@@ -289,6 +294,43 @@ def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
         for p in (tmp_front, tmp_top, tmp_left):
             if p.exists():
                 p.unlink()
+
+
+def _flip_svg_vertical(svg_content: str, height: float) -> str:
+    """
+    Переворачивает SVG по вертикали (ось Y).
+    Использует трансформацию scale(1, -1) с соответствующим смещением.
+    """
+    import re
+    
+    # Ищем корневой элемент <svg> и извлекаем его атрибуты и содержимое
+    svg_match = re.search(r'<svg([^>]*)>(.*?)</svg>', svg_content, re.DOTALL)
+    if not svg_match:
+        return svg_content
+    
+    attrs = svg_match.group(1)
+    inner = svg_match.group(2)
+    
+    # Пытаемся извлечь viewBox или размеры
+    viewbox_match = re.search(r'viewBox=["\']([^"\']*)["\']', attrs)
+    if viewbox_match:
+        # viewBox="minX minY width height"
+        parts = viewbox_match.group(1).split()
+        if len(parts) == 4:
+            min_x, min_y, width, height_val = parts
+            new_height = float(height_val)
+            # Трансформация: scale(1, -1) переворачивает, translate смещает обратно
+            # Новая Y = -Y + new_height
+            transform = f'transform="translate(0, {new_height}) scale(1, -1)"'
+            
+            # Оборачиваем содержимое в <g> с трансформацией
+            new_svg = f'<svg{attrs}><g {transform}>{inner}</g></svg>'
+            return new_svg
+    
+    # Если viewBox нет, пробуем использовать переданную высоту
+    transform = f'transform="translate(0, {height}) scale(1, -1)"'
+    new_svg = f'<svg{attrs}><g {transform}>{inner}</g></svg>'
+    return new_svg
                 
 # -----------------------------------------------------------------------------
 # FastAPI (остальное без изменений)
