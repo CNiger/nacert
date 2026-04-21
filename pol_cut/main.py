@@ -232,9 +232,10 @@ def make_cutter_in_plane(contour_points: List[Tuple[float, float]], side: str):
 def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
     """
     Создаёт единый SVG‑файл с тремя проекциями детали (спереди, сверху, слева).
-    Стиль: графитовый фон на всю страницу, оранжевые видимые линии, голубые скрытые.
-    Толщина линий 0.6.
     """
+    import re
+    from xml.dom import minidom
+    
     opts = {
         "width": 380,
         "height": 280,
@@ -256,53 +257,57 @@ def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
         cq.exporters.export(part, str(tmp_top),   opt=opts | {"projectionDir": (0, -1, 0)})
         cq.exporters.export(part, str(tmp_left),  opt=opts | {"projectionDir": (1, 0, 0)})
 
-        def clean_svg(path: Path) -> str:
-            lines = path.read_text(encoding="utf-8").splitlines()
-            cleaned = []
-            for line in lines:
-                stripped = line.strip()
-                if stripped.startswith('<?xml') or stripped.startswith('<!DOCTYPE'):
-                    continue
-                cleaned.append(line)
-            return '\n'.join(cleaned).strip()
+        def extract_svg_content(path: Path) -> str:
+            """Извлекает содержимое SVG без внешней обёртки"""
+            content = path.read_text(encoding="utf-8")
+            # Удаляем XML декларацию и DOCTYPE
+            content = re.sub(r'<\?xml.*?\?>', '', content)
+            content = re.sub(r'<!DOCTYPE.*?>', '', content)
+            # Извлекаем содержимое между <svg> и </svg>
+            match = re.search(r'<svg[^>]*>(.*?)</svg>', content, re.DOTALL)
+            if match:
+                return match.group(1).strip()
+            return content.strip()
 
-        svg_front = clean_svg(tmp_front)
-        svg_top   = clean_svg(tmp_top)
-        svg_left_raw = clean_svg(tmp_left)
+        svg_front_content = extract_svg_content(tmp_front)
+        svg_top_content = extract_svg_content(tmp_top)
+        svg_left_content = extract_svg_content(tmp_left)
         
-        # Для левой проекции нужно:
-        # 1. Повернуть на -90 градусов (чтобы высота пошла вверх, а глубина вправо)
-        # 2. Сместить, чтобы изображение не вылезало за границы
-        # Оборачиваем в группу с поворотом относительно центра
-        svg_left = f'''<svg width="380" height="280" viewBox="0 0 380 280" xmlns="http://www.w3.org/2000/svg">
+        # Для левой проекции: поворачиваем содержимое
+        # Координаты: центр в (190, 140), поворот -90°
+        svg_left_transformed = f'''<svg width="380" height="280" viewBox="0 0 380 280" xmlns="http://www.w3.org/2000/svg">
   <g transform="translate(190, 140) rotate(-90) translate(-190, -140)">
-    {svg_left_raw}
+    {svg_left_content}
   </g>
 </svg>'''
 
-        # Фон на всю страницу 2000×1400
+        # Фронтальная и верхняя остаются без изменений
+        svg_front_full = f'''<svg width="380" height="280" viewBox="0 0 380 280" xmlns="http://www.w3.org/2000/svg">
+  {svg_front_content}
+</svg>'''
+        
+        svg_top_full = f'''<svg width="380" height="280" viewBox="0 0 380 280" xmlns="http://www.w3.org/2000/svg">
+  {svg_top_content}
+</svg>'''
+
         combined_svg = f'''<?xml version="1.0" encoding="UTF-8"?>
 <svg width="2000" height="1400" xmlns="http://www.w3.org/2000/svg">
-  <!-- Графитовый фон на всю страницу -->
   <rect x="0" y="0" width="2000" height="1400" fill="#2a2a2a" />
   
-  <!-- Передняя проекция -->
   <g transform="translate(20, 80)">
-    {svg_front}
+    {svg_front_full}
   </g>
   
-  <!-- Левая проекция (повёрнутая) -->
   <g transform="translate(620, 80)">
-    {svg_left}
+    {svg_left_transformed}
   </g>
   
-  <!-- Верхняя проекция -->
   <g transform="translate(20, 480)">
-    {svg_top}
+    {svg_top_full}
   </g>
 </svg>'''
 
-        result_path = TEMPLATE_DIR / filename
+        result_path = TEMP_DIR / filename
         result_path.write_text(combined_svg, encoding="utf-8")
         return result_path
 
