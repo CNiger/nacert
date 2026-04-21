@@ -135,6 +135,10 @@ async def shutdown_event():
 def lekz():
     return FileResponse("lekz.html")
 
+lek_path = Path(__file__).parent / "lek"
+if lek_path.exists():
+    app.mount("/lek", StaticFiles(directory="lek", html=True), name="lek")
+
 @app.get("/")
 def start():
     return FileResponse("start.html")
