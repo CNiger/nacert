@@ -242,9 +242,9 @@ def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
         "marginTop": 25,
         "showAxes": False,
         "showHidden": True,
-        "strokeWidth": 0.6,
-        "strokeColor": (255, 140, 0),
-        "hiddenColor": (173, 216, 230),
+        "strokeWidth": 0.6,                     # уменьшено на 25%
+        "strokeColor": (255, 140, 0),           # оранжевый – видимые линии
+        "hiddenColor": (173, 216, 230),         # голубой – скрытые линии
     }
 
     tmp_front = TEMP_DIR / "_tmp_front.svg"
@@ -270,42 +270,7 @@ def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
         svg_top   = clean_svg(tmp_top)
         svg_left  = clean_svg(tmp_left)
 
-        # ФИЗИЧЕСКИ ПЕРЕВОРАЧИВАЕМ ЛЕВУЮ ПРОЕКЦИЮ ПО ВЫСОТЕ (Y)
-        # Ищем viewBox и меняем координаты Y на (height - Y)
-        import re
-        
-        # Извлекаем viewBox
-        vb_match = re.search(r'viewBox="([^"]+)"', svg_left)
-        if vb_match:
-            vb_parts = list(map(float, vb_match.group(1).split()))
-            if len(vb_parts) == 4:
-                min_x, min_y, width_vb, height_vb = vb_parts
-                max_y = min_y + height_vb
-                
-                # Функция для переворота Y координат
-                def flip_y(match):
-                    coords = match.group(0)
-                    # Парсим числа в координатах
-                    nums = re.findall(r'-?\d+\.?\d*', coords)
-                    if len(nums) >= 2:
-                        # Переворачиваем Y координаты (второе число в каждой паре)
-                        flipped = []
-                        for i in range(0, len(nums), 2):
-                            if i + 1 < len(nums):
-                                x = float(nums[i])
-                                y = float(nums[i+1])
-                                y_flipped = max_y - (y - min_y)  # Переворот
-                                flipped.append(f"{x:.6f} {y_flipped:.6f}")
-                        return " ".join(flipped)
-                    return coords
-                
-                # Переворачиваем координаты во всех path элементах
-                svg_left = re.sub(r'd="([^"]+)"', lambda m: f'd="{re.sub(r'[MmLlHhVvCcSsQqTtZz][\s\d\.\-]+', flip_y, m.group(1))}"', svg_left)
-                
-                # Обновляем viewBox с перевёрнутым Y диапазоном
-                svg_left = re.sub(r'viewBox="[^"]+"', f'viewBox="{min_x} {min_y} {width_vb} {height_vb}"', svg_left)
-
-        # Фон на всю страницу 2000×1400
+        # Фон на всю страницу 1200×720
         combined_svg = f'''<?xml version="1.0" encoding="UTF-8"?>
 <svg width="2000" height="1400" xmlns="http://www.w3.org/2000/svg">
   <!-- Графитовый фон на всю страницу -->
@@ -324,8 +289,7 @@ def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
         for p in (tmp_front, tmp_top, tmp_left):
             if p.exists():
                 p.unlink()
-
-
+                
 # -----------------------------------------------------------------------------
 # FastAPI (остальное без изменений)
 # -----------------------------------------------------------------------------
@@ -533,3 +497,4 @@ if __name__ == "__main__":
     print("   Polyhedron Generator Service v8.0.2 — экспорт SVG исправлен (toSvg)")
     print("="*90)
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True, log_level="info")
+
