@@ -180,7 +180,7 @@
 
     <div id="status" class="status" style="display: none;"></div>
     <div id="results"></div>
-    <footer>Инженерная геометрия · агрессивный режим штрафов (power=1.6)</footer>
+
 </div>
 
 <script>
@@ -198,7 +198,7 @@
     function updateFileList() {
         let html = '';
         if (referenceFile) html += `<div>✅ Эталон: ${referenceFile.name}</div>`;
-        if (studentFiles.length) html += `<div>📌 Студенты (${studentFiles.length}): ${studentFiles.map(f=>f.name).join(', ')}</div>`;
+        if (studentFiles.length) html += `<div>📌 Студенческий (${studentFiles.length}): ${studentFiles.map(f=>f.name).join(', ')}</div>`;
         fileListDiv.innerHTML = html || '<div style="color:#9ca3b5;">Файлы не выбраны</div>';
     }
 
