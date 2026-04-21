@@ -269,12 +269,16 @@ def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
         svg_front = clean_svg(tmp_front)
         svg_top   = clean_svg(tmp_top)
         svg_left_raw = clean_svg(tmp_left)
-
-        # Исправляем ориентацию левой проекции
-        # CadQuery выдаёт вид слева в координатах YZ, где Y идёт вправо, Z вверх
-        # На чертеже нам нужно, чтобы Z (высота) шла вверх, а Y (глубина) шла вправо
-        # Поэтому поворачиваем на 90° против часовой стрелки
-        svg_left = f'<g transform="rotate(-90)">{svg_left_raw}</g>'
+        
+        # Для левой проекции нужно:
+        # 1. Повернуть на -90 градусов (чтобы высота пошла вверх, а глубина вправо)
+        # 2. Сместить, чтобы изображение не вылезало за границы
+        # Оборачиваем в группу с поворотом относительно центра
+        svg_left = f'''<svg width="380" height="280" viewBox="0 0 380 280" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(190, 140) rotate(-90) translate(-190, -140)">
+    {svg_left_raw}
+  </g>
+</svg>'''
 
         # Фон на всю страницу 2000×1400
         combined_svg = f'''<?xml version="1.0" encoding="UTF-8"?>
@@ -282,12 +286,23 @@ def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
   <!-- Графитовый фон на всю страницу -->
   <rect x="0" y="0" width="2000" height="1400" fill="#2a2a2a" />
   
-  <g transform="translate(20,80)">{svg_front}</g>
-  <g transform="translate(620,80)">{svg_left}</g>
-  <g transform="translate(20,480)">{svg_top}</g>
+  <!-- Передняя проекция -->
+  <g transform="translate(20, 80)">
+    {svg_front}
+  </g>
+  
+  <!-- Левая проекция (повёрнутая) -->
+  <g transform="translate(620, 80)">
+    {svg_left}
+  </g>
+  
+  <!-- Верхняя проекция -->
+  <g transform="translate(20, 480)">
+    {svg_top}
+  </g>
 </svg>'''
 
-        result_path = TEMP_DIR / filename
+        result_path = TEMPLATE_DIR / filename
         result_path.write_text(combined_svg, encoding="utf-8")
         return result_path
 
@@ -295,6 +310,8 @@ def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
         for p in (tmp_front, tmp_top, tmp_left):
             if p.exists():
                 p.unlink()
+
+
 # -----------------------------------------------------------------------------
 # FastAPI (остальное без изменений)
 # -----------------------------------------------------------------------------
