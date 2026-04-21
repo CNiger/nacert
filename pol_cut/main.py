@@ -232,10 +232,9 @@ def make_cutter_in_plane(contour_points: List[Tuple[float, float]], side: str):
 def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
     """
     Создаёт единый SVG‑файл с тремя проекциями детали (спереди, сверху, слева).
+    Стиль: графитовый фон на всю страницу, оранжевые видимые линии, голубые скрытые.
+    Толщина линий 0.6.
     """
-    import re
-    from xml.dom import minidom
-    
     opts = {
         "width": 380,
         "height": 280,
@@ -257,54 +256,64 @@ def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
         cq.exporters.export(part, str(tmp_top),   opt=opts | {"projectionDir": (0, -1, 0)})
         cq.exporters.export(part, str(tmp_left),  opt=opts | {"projectionDir": (1, 0, 0)})
 
-        def extract_svg_content(path: Path) -> str:
-            """Извлекает содержимое SVG без внешней обёртки"""
-            content = path.read_text(encoding="utf-8")
-            # Удаляем XML декларацию и DOCTYPE
-            content = re.sub(r'<\?xml.*?\?>', '', content)
-            content = re.sub(r'<!DOCTYPE.*?>', '', content)
-            # Извлекаем содержимое между <svg> и </svg>
-            match = re.search(r'<svg[^>]*>(.*?)</svg>', content, re.DOTALL)
-            if match:
-                return match.group(1).strip()
-            return content.strip()
+        def clean_svg(path: Path) -> str:
+            lines = path.read_text(encoding="utf-8").splitlines()
+            cleaned = []
+            for line in lines:
+                stripped = line.strip()
+                if stripped.startswith('<?xml') or stripped.startswith('<!DOCTYPE'):
+                    continue
+                cleaned.append(line)
+            return '\n'.join(cleaned).strip()
 
-        svg_front_content = extract_svg_content(tmp_front)
-        svg_top_content = extract_svg_content(tmp_top)
-        svg_left_content = extract_svg_content(tmp_left)
+        svg_front = clean_svg(tmp_front)
+        svg_top   = clean_svg(tmp_top)
+        svg_left  = clean_svg(tmp_left)
+
+        # ФИЗИЧЕСКИ ПЕРЕВОРАЧИВАЕМ ЛЕВУЮ ПРОЕКЦИЮ ПО ВЫСОТЕ (Y)
+        # Ищем viewBox и меняем координаты Y на (height - Y)
+        import re
         
-        # Для левой проекции: поворачиваем содержимое
-        # Координаты: центр в (190, 140), поворот -90°
-        svg_left_transformed = f'''<svg width="380" height="280" viewBox="0 0 380 280" xmlns="http://www.w3.org/2000/svg">
-  <g transform="translate(190, 140) rotate(-90) translate(-190, -140)">
-    {svg_left_content}
-  </g>
-</svg>'''
+        # Извлекаем viewBox
+        vb_match = re.search(r'viewBox="([^"]+)"', svg_left)
+        if vb_match:
+            vb_parts = list(map(float, vb_match.group(1).split()))
+            if len(vb_parts) == 4:
+                min_x, min_y, width_vb, height_vb = vb_parts
+                max_y = min_y + height_vb
+                
+                # Функция для переворота Y координат
+                def flip_y(match):
+                    coords = match.group(0)
+                    # Парсим числа в координатах
+                    nums = re.findall(r'-?\d+\.?\d*', coords)
+                    if len(nums) >= 2:
+                        # Переворачиваем Y координаты (второе число в каждой паре)
+                        flipped = []
+                        for i in range(0, len(nums), 2):
+                            if i + 1 < len(nums):
+                                x = float(nums[i])
+                                y = float(nums[i+1])
+                                y_flipped = max_y - (y - min_y)  # Переворот
+                                flipped.append(f"{x:.6f} {y_flipped:.6f}")
+                        return " ".join(flipped)
+                    return coords
+                
+                # Переворачиваем координаты во всех path элементах
+                svg_left = re.sub(r'd="([^"]+)"', lambda m: f'd="{re.sub(r'[MmLlHhVvCcSsQqTtZz][\s\d\.\-]+', flip_y, m.group(1))}"', svg_left)
+                
+                # Обновляем viewBox с перевёрнутым Y диапазоном
+                svg_left = re.sub(r'viewBox="[^"]+"', f'viewBox="{min_x} {min_y} {width_vb} {height_vb}"', svg_left)
 
-        # Фронтальная и верхняя остаются без изменений
-        svg_front_full = f'''<svg width="380" height="280" viewBox="0 0 380 280" xmlns="http://www.w3.org/2000/svg">
-  {svg_front_content}
-</svg>'''
-        
-        svg_top_full = f'''<svg width="380" height="280" viewBox="0 0 380 280" xmlns="http://www.w3.org/2000/svg">
-  {svg_top_content}
-</svg>'''
-
+        # Фон на всю страницу 2000×1400
         combined_svg = f'''<?xml version="1.0" encoding="UTF-8"?>
 <svg width="2000" height="1400" xmlns="http://www.w3.org/2000/svg">
+  <!-- Графитовый фон на всю страницу -->
   <rect x="0" y="0" width="2000" height="1400" fill="#2a2a2a" />
   
-  <g transform="translate(20, 80)">
-    {svg_front_full}
-  </g>
-  
-  <g transform="translate(620, 80)">
-    {svg_left_transformed}
-  </g>
-  
-  <g transform="translate(20, 480)">
-    {svg_top_full}
-  </g>
+  <g transform="translate(20,80)">{svg_front}</g>
+  <g transform="translate(620,80)">{svg_left}</g>
+  <g transform="translate(20,480)">{svg_top}</g>
 </svg>'''
 
         result_path = TEMP_DIR / filename
