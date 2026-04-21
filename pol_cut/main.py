@@ -270,12 +270,13 @@ def create_three_view_drawing(part: cq.Workplane, filename: str) -> Path:
         svg_top   = clean_svg(tmp_top)
         svg_left  = clean_svg(tmp_left)
 
-        # КОСТЫЛЬ: переворачиваем левую проекцию по вертикали (отражаем по оси Y)
-        # Добавляем transform="scale(1, -1)" для переворота, но нужно также сместить,
-        # чтобы не вылезла за пределы области
+        # КОСТЫЛЬ 1: переворачиваем левую проекцию по вертикали
         svg_left = _flip_svg_vertical(svg_left, opts["height"])
+        
+        # КОСТЫЛЬ 2: поворачиваем верхнюю проекцию на 90 градусов по часовой стрелке
+        svg_top = _rotate_svg_clockwise_90(svg_top, opts["width"], opts["height"])
 
-        # Фон на всю страницу 1200×720
+        # Фон на всю страницу
         combined_svg = f'''<?xml version="1.0" encoding="UTF-8"?>
 <svg width="2000" height="1400" xmlns="http://www.w3.org/2000/svg">
   <!-- Графитовый фон на всю страницу -->
@@ -314,21 +315,53 @@ def _flip_svg_vertical(svg_content: str, height: float) -> str:
     # Пытаемся извлечь viewBox или размеры
     viewbox_match = re.search(r'viewBox=["\']([^"\']*)["\']', attrs)
     if viewbox_match:
-        # viewBox="minX minY width height"
         parts = viewbox_match.group(1).split()
         if len(parts) == 4:
             min_x, min_y, width, height_val = parts
             new_height = float(height_val)
-            # Трансформация: scale(1, -1) переворачивает, translate смещает обратно
-            # Новая Y = -Y + new_height
             transform = f'transform="translate(0, {new_height}) scale(1, -1)"'
-            
-            # Оборачиваем содержимое в <g> с трансформацией
             new_svg = f'<svg{attrs}><g {transform}>{inner}</g></svg>'
             return new_svg
     
     # Если viewBox нет, пробуем использовать переданную высоту
     transform = f'transform="translate(0, {height}) scale(1, -1)"'
+    new_svg = f'<svg{attrs}><g {transform}>{inner}</g></svg>'
+    return new_svg
+
+
+def _rotate_svg_clockwise_90(svg_content: str, width: float, height: float) -> str:
+    """
+    Поворачивает SVG на 90 градусов по часовой стрелке.
+    Использует трансформацию: translate(width, 0) rotate(90)
+    """
+    import re
+    
+    # Ищем корневой элемент <svg>
+    svg_match = re.search(r'<svg([^>]*)>(.*?)</svg>', svg_content, re.DOTALL)
+    if not svg_match:
+        return svg_content
+    
+    attrs = svg_match.group(1)
+    inner = svg_match.group(2)
+    
+    # Пытаемся извлечь viewBox
+    viewbox_match = re.search(r'viewBox=["\']([^"\']*)["\']', attrs)
+    if viewbox_match:
+        parts = viewbox_match.group(1).split()
+        if len(parts) == 4:
+            min_x, min_y, svg_width, svg_height = parts
+            w = float(svg_width)
+            h = float(svg_height)
+            # Поворот на 90° по часовой: translate(w, 0) rotate(90)
+            # Меняем местами ширину и высоту
+            transform = f'transform="translate({w}, 0) rotate(90)"'
+            # Меняем viewBox местами для корректного отображения
+            new_attrs = re.sub(r'viewBox=["\'][^"\']*["\']', f'viewBox="0 0 {h} {w}"', attrs)
+            new_svg = f'<svg{new_attrs}><g {transform}>{inner}</g></svg>'
+            return new_svg
+    
+    # Если viewBox нет, используем переданные размеры
+    transform = f'transform="translate({width}, 0) rotate(90)"'
     new_svg = f'<svg{attrs}><g {transform}>{inner}</g></svg>'
     return new_svg
                 
