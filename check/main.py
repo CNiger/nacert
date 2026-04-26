@@ -31,7 +31,7 @@ class StepComparatorLight:
             ref_cq = cq.importers.importStep(ref_path)
             ref_mesh = self._to_mesh(ref_cq)
             ref_mesh = self._normalize(ref_mesh)
-            self.ref_voxels = self._to_voxels(ref_mesh, 24)  # 24³ вокселей
+            self.ref_voxels = self._to_voxels(ref_mesh, 16)  # 24³ вокселей
             self.ref_edges = self._count_edges(ref_cq)
         except Exception as e:
             print(f"Ошибка эталона: {e}", flush=True)
