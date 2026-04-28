@@ -179,7 +179,7 @@ def make_3view_svg(shape: cq.Workplane, base_name: str) -> dict:
     }
 
     views = {}
-    for view, dir in [("front", (0,-1,0)), ("top", (0,0,-1)), ("left", (-1,0,0))]:
+    for view, dir in [("front", (0,-1,0)), ("top", (0,0,1)), ("left", (-1,0,0))]:
         svg_opts["projectionDir"] = dir
         path = TEMP_DIR / f"{base_name}_{view}.svg"
         cq.exporters.export(shape, str(path), opt=svg_opts)
